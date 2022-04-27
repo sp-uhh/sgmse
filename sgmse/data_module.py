@@ -24,8 +24,8 @@ class Specs(Dataset):
         self, data_dir, subset, dummy, shuffle_spec, num_frames,
         normalize_audio=True, spec_transform=None, stft_kwargs=None, **ignored_kwargs
     ):
-        self.clean_files = glob(join(data_dir, subset) + '/clean/*.wav')
-        self.noisy_files = glob(join(data_dir, subset) + '/noisy/*.wav')
+        self.clean_files = sorted(glob(join(data_dir, subset) + '/clean/*.wav'))
+        self.noisy_files = sorted(glob(join(data_dir, subset) + '/noisy/*.wav'))
         self.dummy = dummy
         self.num_frames = num_frames
         self.shuffle_spec = shuffle_spec
