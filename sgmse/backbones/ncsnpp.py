@@ -253,6 +253,7 @@ class NCSNpp(nn.Module):
 
     @staticmethod
     def add_argparse_args(parser):
+        parser.add_argument("--centered", action="store_true", help="The data is already centered [-1, 1]")
         return parser
 
     def forward(self, x, time_cond):
