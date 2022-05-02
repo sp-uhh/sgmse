@@ -77,11 +77,13 @@ def get_pc_sampler(
                 xt = y
             else:
                 xt = sde.prior_sampling(y.shape, y).to(y.device)
+            xt1 = xt    
 
             timesteps = torch.linspace(sde.T, eps, sde.N, device=y.device)
             if debug:
                 debug_quantities["xT"] = xt.cpu()
 
+            reverse_samples = []
             for i in range(sde.N):
                 t = timesteps[i]
                 vec_t = torch.ones(y.shape[0], device=y.device) * t
@@ -99,6 +101,7 @@ def get_pc_sampler(
                     debug_quantities["mse_y"].append(_power(y - xt).item())
                 else:
                     xt, xt_mean = predictor.update_fn(xt, vec_t, y)
+                reverse_samples.append(xt_mean)
 
             full_n_steps = sde.N * (corrector.n_steps + 1)
             x_result = xt_mean if denoise else xt
@@ -106,7 +109,7 @@ def get_pc_sampler(
                 debug_quantities["x_final"] = x_result
                 return x_result, full_n_steps, debug_quantities
             else:
-                return x_result, full_n_steps
+                return x_result, reverse_samples, xt1, full_n_steps
 
     return pc_sampler
 

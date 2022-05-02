@@ -303,7 +303,8 @@ class NCSNpp(nn.Module):
             for i_block in range(self.num_res_blocks):
                 h = modules[m_idx](hs[-1], temb)
                 m_idx += 1
-                if h.shape[-1] in self.attn_resolutions:
+                # edit: check H dim (-2) not W dim (-1)
+                if h.shape[-2] in self.attn_resolutions:
                     h = modules[m_idx](h)
                     m_idx += 1
 
@@ -349,7 +350,8 @@ class NCSNpp(nn.Module):
                 h = modules[m_idx](torch.cat([h, hs.pop()], dim=1), temb)
                 m_idx += 1
 
-            if h.shape[-1] in self.attn_resolutions:
+            # edit: from -1 to -2
+            if h.shape[-2] in self.attn_resolutions:
                 h = modules[m_idx](h)
                 m_idx += 1
 
