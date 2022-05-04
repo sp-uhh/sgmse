@@ -27,6 +27,8 @@ if __name__ == '__main__':
           parser_.add_argument("--backbone", type=str, choices=BackboneRegistry.get_all_names(), required=True)
           parser_.add_argument("--sde", type=str, choices=SDERegistry.get_all_names(), default="ouve")
           parser_.add_argument("--nolog", action='store_true', help="Turn off logging (for development purposes)")
+          parser_.add_argument("--accumulate-grad-batches", type=int, default=1, help="Effective batch size becomes : batch_size * acc")
+          
      temp_args, _ = base_parser.parse_known_args()
 
      # Add specific args for ScoreModel, pl.Trainer, the SDE class and backbone DNN class
@@ -70,7 +72,8 @@ if __name__ == '__main__':
      trainer = pl.Trainer.from_argparse_args(
           arg_groups['pl.Trainer'],
           strategy=DDPPlugin(find_unused_parameters=False), logger=logger,
-          log_every_n_steps=10
+          log_every_n_steps=10, num_sanity_val_steps=0,
+          accumulate_grad_batches=args.accumulate_grad_batches
      )
 
      # Train model

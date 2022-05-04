@@ -11,7 +11,7 @@ import wandb
 from sgmse import sampling
 from sgmse.sdes import SDERegistry
 from sgmse.backbones import BackboneRegistry
-from sgmse.util.validation_tools import visualize_process
+from sgmse.util.inference import evaluate_model
 
 
 class ScoreModel(pl.LightningModule):
@@ -20,7 +20,8 @@ class ScoreModel(pl.LightningModule):
         lr: float = 1e-4, ema_decay: float = 0.999,
         t_eps: float = 3e-2, reduce_mean: bool = False,
         transform: str = 'none', input_y: bool = True, nolog: bool = False,
-        weighting_exponent: float = 0.0, g_weighting_exponent: float = 0.0, output_std_exponent: float = -1.,
+        num_eval_files: int = 0, weighting_exponent: float = 0.0, 
+        g_weighting_exponent: float = 0.0, output_std_exponent: float = -1.,
         loss_type: str = 'mse', data_module_cls = None, **kwargs
     ):
         """
@@ -60,6 +61,7 @@ class ScoreModel(pl.LightningModule):
         self.weighting_exponent = weighting_exponent
         self.g_weighting_exponent = g_weighting_exponent
         self.loss_type = loss_type
+        self.num_eval_files = num_eval_files
 
         self.save_hyperparameters(ignore=['nolog'])
         self.data_module = data_module_cls(**kwargs, gpu=kwargs.get('gpus', 0) > 0)
@@ -73,6 +75,7 @@ class ScoreModel(pl.LightningModule):
         parser.add_argument("--ema-decay", type=float, default=0.999, help="The parameter EMA decay constant (0.999 by default)")
         parser.add_argument("--t-eps", type=float, default=0.03, help="The minimum time (3e-2 by default)")
         parser.add_argument("--reduce-mean", action="store_true", help="Average loss across all data dimensions (as opposed to summing)")
+        parser.add_argument("--num-eval-files", type=int, default=0, help="Number of files for speech enhancement performance evaluation during training.")
         parser.add_argument("--input-y", dest='input_y', action="store_true", help="Provide y to the score model")
         parser.add_argument("--no-input-y", dest='input_y', action="store_false", help="Don't provide y to the score model")
         parser.set_defaults(input_y=True)
@@ -166,17 +169,13 @@ class ScoreModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         loss = self._step(batch, batch_idx)
         self.log('valid_loss', loss, on_step=False, on_epoch=True)
-        if batch_idx == 0 and self.local_rank == 0:  # make visualization logs only from rank zero process
-            x, y = batch
-            # fig_dict = visualize_process(x, y, model=self, N=50, M=min(3, x.shape[0]))
-            # for name, fig in fig_dict.items():
-            #     if self.nolog:
-            #         pass
-            #         # fig.savefig(f'figures/{name}_{self.current_epoch}.png')
-            #     else:
-            #         pass
-            #         #self.logger.log_image(key=name, images=[fig])
-            #     # plt.close(fig)
+
+        # Evaluate speech enhancement performance
+        if batch_idx == 0 and self.num_eval_files != 0:
+            pesq, si_sdr = evaluate_model(self, self.num_eval_files)
+            self.log('pesq', pesq, on_step=False, on_epoch=True)
+            self.log('si_sdr', si_sdr, on_step=False, on_epoch=True)
+            
         return loss
 
     def forward(self, x, t, y):

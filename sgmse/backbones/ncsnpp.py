@@ -202,10 +202,9 @@ class NCSNpp(nn.Module):
         pyramid_ch = 0
         # Upsampling block
         for i_level in reversed(range(num_resolutions)):
-            for i_block in range(num_res_blocks + 1):
+            for i_block in range(num_res_blocks + 1):  # +1 blocks in upsampling because of skip connection from combiner
                 out_ch = nf * ch_mult[i_level]
-                modules.append(ResnetBlock(in_ch=in_ch + hs_c.pop(),
-                                                                     out_ch=out_ch))
+                modules.append(ResnetBlock(in_ch=in_ch + hs_c.pop(), out_ch=out_ch))
                 in_ch = out_ch
 
             if all_resolutions[i_level] in attn_resolutions:
@@ -297,7 +296,7 @@ class NCSNpp(nn.Module):
         if self.progressive_input != 'none':
             input_pyramid = x
 
-        hs = [modules[m_idx](x)]
+        hs = [modules[m_idx](x)]  # Input layer: Conv2d
         m_idx += 1
         for i_level in range(self.num_resolutions):
             # Residual blocks for this resolution
@@ -311,7 +310,7 @@ class NCSNpp(nn.Module):
 
                 hs.append(h)
 
-            if i_level != self.num_resolutions - 1:
+            if i_level != self.num_resolutions - 1:  # Downsampling
                 if self.resblock_type == 'ddpm':
                     h = modules[m_idx](hs[-1])
                     m_idx += 1
@@ -319,7 +318,7 @@ class NCSNpp(nn.Module):
                     h = modules[m_idx](hs[-1], temb)
                     m_idx += 1
 
-                if self.progressive_input == 'input_skip':
+                if self.progressive_input == 'input_skip':   # Combine h with x
                     input_pyramid = self.pyramid_downsample(input_pyramid)
                     h = modules[m_idx](input_pyramid, h)
                     m_idx += 1
@@ -336,11 +335,11 @@ class NCSNpp(nn.Module):
                 hs.append(h)
 
         h = hs[-1]
-        h = modules[m_idx](h, temb)
+        h = modules[m_idx](h, temb)  # ResNet block
         m_idx += 1
-        h = modules[m_idx](h)
+        h = modules[m_idx](h)  # Attention block 
         m_idx += 1
-        h = modules[m_idx](h, temb)
+        h = modules[m_idx](h, temb)  # ResNet block
         m_idx += 1
 
         pyramid = None

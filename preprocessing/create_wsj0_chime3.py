@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 
 min_snr = 0
-max_snr = 15
+max_snr = 20
 sr = 16000
 
 
