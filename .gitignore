@@ -22,6 +22,9 @@ tramp
 
 # figures
 figures/
+listen/
+enhanced/
+checkpoints/
 
 # eshell files
 /eshell/history
@@ -264,6 +267,7 @@ cython_debug/
 #.idea/
 
 ### VisualStudioCode ###
+.vscode/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
