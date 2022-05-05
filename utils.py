@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.stats
 from scipy.signal import butter, sosfilt
+import torch
 
 
 def si_sdr_components(s_hat, s, n):
@@ -65,3 +66,13 @@ def si_sdr(s, s_hat):
     sdr = 10*np.log10(np.linalg.norm(alpha*s)**2/np.linalg.norm(
         alpha*s - s_hat)**2)
     return sdr
+
+
+def pad_spec(Y):
+    T = Y.size(3)
+    if T%64 !=0:
+        num_pad = 64-T%64
+    else:
+        num_pad = 0
+    pad2d = torch.nn.ZeroPad2d((0, num_pad, 0,0))
+    return pad2d(Y)

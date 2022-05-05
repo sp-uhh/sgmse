@@ -77,13 +77,9 @@ for noisy_file in tqdm(noisy_files):
     
     # Backward transform in time domain
     x_hat = model.to_audio(sample.squeeze(), T_orig)
-    
-    # Linear combination with noisy audio
-    mixed_audios = 0.8*x_hat.cpu() + 0.2*y
-    recon = x_hat.cpu()
+    x_hat = x_hat.cpu()
 
     # Write enhanced wav file
-    write(sgmse_dir+'mixed/'+filename, mixed_audios.numpy()[0,:], 16000)
-    write(sgmse_dir+filename, recon.numpy(), 16000)
+    write(sgmse_dir+filename, x_hat.numpy(), 16000)
     
     

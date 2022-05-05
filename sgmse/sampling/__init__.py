@@ -42,7 +42,7 @@ _debug_keys = (
 def get_pc_sampler(
     predictor_name, corrector_name, sde, score_fn, y,
     denoise=True, eps=3e-2, snr=0.1, corrector_steps=1, probability_flow: bool = False,
-    debug: bool = False, debug_x = None, y_as_initial = False
+    intermediate=False
 ):
     """Create a Predictor-Corrector (PC) sampler.
 
@@ -56,62 +56,49 @@ def get_pc_sampler(
         eps: A `float` number. The reverse-time SDE and ODE are integrated to `epsilon` to avoid numerical issues.
         snr: The SNR to use for the corrector. 0.1 by default, and ignored for `NoneCorrector`.
         N: The number of reverse sampling steps. If `None`, uses the SDE's `N` property by default.
-        debug: Flag to return comprehensive debugging results for each step. Requires `debug_x` to be the known target signal.
-        debug_x: The known target signal to compare against for debugging.
 
     Returns:
         A sampling function that returns samples and the number of function evaluations during sampling.
     """
     predictor_cls = PredictorRegistry.get_by_name(predictor_name)
     corrector_cls = CorrectorRegistry.get_by_name(corrector_name)
-    predictor = predictor_cls(sde, score_fn, probability_flow=probability_flow, debug=debug)
+    predictor = predictor_cls(sde, score_fn, probability_flow=probability_flow)
     corrector = corrector_cls(sde, score_fn, snr=snr, n_steps=corrector_steps)
-    if debug:
-        debug_quantities = { k: [] for k in _debug_keys }
 
-    def pc_sampler():
-        """The PC sampler function."""
+    def pc_sampler_intermediate():
+        """The PC sampler function with intermediate sampling results"""
         with torch.no_grad():
-            # Initial sample
-            if y_as_initial:
-                xt = y
-            else:
-                xt = sde.prior_sampling(y.shape, y).to(y.device)
+            xt = sde.prior_sampling(y.shape, y).to(y.device)
             xt1 = xt    
-
             timesteps = torch.linspace(sde.T, eps, sde.N, device=y.device)
-            if debug:
-                debug_quantities["xT"] = xt.cpu()
-
             reverse_samples = []
             for i in range(sde.N):
                 t = timesteps[i]
                 vec_t = torch.ones(y.shape[0], device=y.device) * t
-                # TODO debugging for correctors?
                 xt, xt_mean = corrector.update_fn(xt, vec_t, y)
-
-                if debug:
-                    xt, xt_mean, debug_result = predictor.debug_update_fn(xt, vec_t, y)
-                    for k, v in debug_result.items():
-                        debug_quantities[k].append(v.cpu())
-                    debug_quantities["t"].append(t.item())
-                    debug_quantities["xt"].append(xt.cpu())
-                    debug_quantities["xt_mean"].append(xt_mean.cpu())
-                    debug_quantities["mse_x"].append(_power(debug_x - xt).item())
-                    debug_quantities["mse_y"].append(_power(y - xt).item())
-                else:
-                    xt, xt_mean = predictor.update_fn(xt, vec_t, y)
+                xt, xt_mean = predictor.update_fn(xt, vec_t, y)
                 reverse_samples.append(xt_mean)
-
             full_n_steps = sde.N * (corrector.n_steps + 1)
             x_result = xt_mean if denoise else xt
-            if debug:
-                debug_quantities["x_final"] = x_result
-                return x_result, full_n_steps, debug_quantities
-            else:
-                return x_result, reverse_samples, xt1, full_n_steps
+            return x_result, reverse_samples, xt1, full_n_steps
 
-    return pc_sampler
+    def pc_sampler():
+        """The PC sampler function."""
+        with torch.no_grad():
+            xt = sde.prior_sampling(y.shape, y).to(y.device)
+            timesteps = torch.linspace(sde.T, eps, sde.N, device=y.device)
+            for i in range(sde.N):
+                t = timesteps[i]
+                vec_t = torch.ones(y.shape[0], device=y.device) * t
+                xt, xt_mean = corrector.update_fn(xt, vec_t, y)
+                xt, xt_mean = predictor.update_fn(xt, vec_t, y)
+            x_result = xt_mean if denoise else xt
+            return x_result
+
+    if intermediate:
+        return pc_sampler_intermediate
+    else:
+        return pc_sampler
 
 
 def get_ode_sampler(

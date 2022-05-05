@@ -12,13 +12,12 @@ PredictorRegistry = Registry("Predictor")
 class Predictor(abc.ABC):
     """The abstract class for a predictor algorithm."""
 
-    def __init__(self, sde, score_fn, probability_flow=False, debug=False):
+    def __init__(self, sde, score_fn, probability_flow=False):
         super().__init__()
         self.sde = sde
         self.rsde = sde.reverse(score_fn)
         self.score_fn = score_fn
         self.probability_flow = probability_flow
-        self.debug = debug
 
     @abc.abstractmethod
     def update_fn(self, x, t, *args):
@@ -41,8 +40,8 @@ class Predictor(abc.ABC):
 
 @PredictorRegistry.register('euler_maruyama')
 class EulerMaruyamaPredictor(Predictor):
-    def __init__(self, sde, score_fn, probability_flow=False, debug=False):
-        super().__init__(sde, score_fn, probability_flow=probability_flow, debug=debug)
+    def __init__(self, sde, score_fn, probability_flow=False):
+        super().__init__(sde, score_fn, probability_flow=probability_flow)
 
     def update_fn(self, x, t, *args):
         dt = -1. / self.rsde.N
@@ -52,21 +51,11 @@ class EulerMaruyamaPredictor(Predictor):
         x = x_mean + diffusion[:, None, None, None] * np.sqrt(-dt) * z
         return x, x_mean
 
-    def debug_update_fn(self, x, t, *args):
-        dt = -1. / self.rsde.N
-        z = torch.randn_like(x)
-        rsde_parts = self.rsde.rsde_parts(x, t, *args)
-        drift = rsde_parts["total_drift"]
-        diffusion = rsde_parts["diffusion"]
-        x_mean = x + drift * dt
-        x = x_mean + diffusion[:, None, None, None] * np.sqrt(-dt) * z
-        return x, x_mean, rsde_parts
-
 
 @PredictorRegistry.register('reverse_diffusion')
 class ReverseDiffusionPredictor(Predictor):
-    def __init__(self, sde, score_fn, probability_flow=False, debug=False):
-        super().__init__(sde, score_fn, probability_flow=probability_flow, debug=debug)
+    def __init__(self, sde, score_fn, probability_flow=False):
+        super().__init__(sde, score_fn, probability_flow=probability_flow)
 
     def update_fn(self, x, t, *args):
         f, G = self.rsde.discretize(x, t, *args)

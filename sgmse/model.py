@@ -145,12 +145,9 @@ class ScoreModel(pl.LightningModule):
         return torch.mean(x * w)
 
     def _step(self, batch, batch_idx):
-        # `x` is a clean complex spectrogram, `y` is a (non-Gaussian-)noisy complex spectrogram.
         x, y = batch
         t = torch.rand(y.shape[0], device=x.device) * (self.sde.T - self.t_eps) + self.t_eps
-        # `mean` is the current OU SDE mean, interpolated between x and y.
         mean, std = self.sde.marginal_prob(x, t, y)
-        # `perturbed_data` is a direct sample from the (solved) forward process of the SDE.
         z = torch.randn_like(y)
         sigmas = std[:, None, None, None]
         gs = self.sde.sde(x, t[:, None, None, None], y)[1]
@@ -160,7 +157,6 @@ class ScoreModel(pl.LightningModule):
         loss = self._loss(err, sigmas, gs)
         return loss
 
-    # TODO check if this function works as intended for the SE input and potentially fix
     def training_step(self, batch, batch_idx):
         loss = self._step(batch, batch_idx)
         self.log('train_loss', loss, on_step=True, on_epoch=True)
@@ -172,10 +168,11 @@ class ScoreModel(pl.LightningModule):
 
         # Evaluate speech enhancement performance
         if batch_idx == 0 and self.num_eval_files != 0:
-            pesq, si_sdr = evaluate_model(self, self.num_eval_files)
+            pesq, si_sdr, estoi = evaluate_model(self, self.num_eval_files)
             self.log('pesq', pesq, on_step=False, on_epoch=True)
             self.log('si_sdr', si_sdr, on_step=False, on_epoch=True)
-            
+            self.log('estoi', estoi, on_step=False, on_epoch=True)
+
         return loss
 
     def forward(self, x, t, y):

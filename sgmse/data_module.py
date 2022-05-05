@@ -38,13 +38,13 @@ class Specs(Dataset):
         assert self.stft_kwargs.get("center", None) == True, "'center' must be True for current implementation"
 
     def __getitem__(self, i):
-        s, _ = load(self.clean_files[i])
-        x, _ = load(self.noisy_files[i])
-        normfac = s.abs().max()
+        x, _ = load(self.clean_files[i])
+        y, _ = load(self.noisy_files[i])
+        normfac = y.abs().max()
 
         # formula applies for center=True
         target_len = (self.num_frames - 1) * self.hop_length
-        current_len = s.size(-1)
+        current_len = x.size(-1)
         pad = max(target_len - current_len, 0)
         if pad == 0:
             # extract random part of the audio file
@@ -52,24 +52,23 @@ class Specs(Dataset):
                 start = int(np.random.uniform(0, current_len-target_len))
             else:
                 start = int((current_len-target_len)/2)
-            s = s[..., start:start+target_len]
             x = x[..., start:start+target_len]
+            y = y[..., start:start+target_len]
         else:
             # pad audio if the length T is smaller than num_frames
-            s = F.pad(s, (pad//2, pad//2+(pad%2)), mode='constant')
             x = F.pad(x, (pad//2, pad//2+(pad%2)), mode='constant')
+            y = F.pad(y, (pad//2, pad//2+(pad%2)), mode='constant')
 
         if self.normalize_audio:
-            # normalize both based on clean speech, to ensure same clean signal power in s and x.
-            # this means that |x|>1 is possible, which is okay for the float32 domain we work in.
-            s = s / normfac
+            # normalize both based on noisy speech, to ensure same clean signal power in x and y.
             x = x / normfac
+            y = y / normfac
 
-        S = torch.stft(s, **self.stft_kwargs)
         X = torch.stft(x, **self.stft_kwargs)
+        Y = torch.stft(y, **self.stft_kwargs)
 
-        S, X = self.spec_transform(S), self.spec_transform(X)
-        return S, X
+        X, Y = self.spec_transform(X), self.spec_transform(Y)
+        return X, Y
 
     def __len__(self):
         if self.dummy:
@@ -82,7 +81,7 @@ class Specs(Dataset):
 class SpecsDataModule(pl.LightningDataModule):
     def __init__(
         self, base_dir, batch_size=32,
-        n_fft=512, hop_length=128, num_frames=256, window='sqrthann',
+        n_fft=510, hop_length=128, num_frames=256, window='sqrthann',
         num_workers=4, dummy=False, spec_factor=1, spec_abs_exponent=1,
         gpu=True, **kwargs
     ):
@@ -164,8 +163,8 @@ class SpecsDataModule(pl.LightningDataModule):
                 "each of which contain `clean` and `noisy` subdirectories.")
         parser.add_argument("--batch-size", type=int, default=32,
             help="The batch size. 32 by default.")
-        parser.add_argument("--n-fft", type=int, default=512,
-            help="Number of FFT bins. 512 by default.")
+        parser.add_argument("--n-fft", type=int, default=510,
+            help="Number of FFT bins. 510 by default.")   # to assure 256 freq bins
         parser.add_argument("--hop-length", type=int, default=128,
             help="Window hop length. 128 by default.")
         parser.add_argument("--num-frames", type=int, default=256,
