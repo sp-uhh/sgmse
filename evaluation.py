@@ -13,18 +13,19 @@ from sgmse.model import ScoreModel
 from utils import pad_spec
 
 # File directories
-#clean_dir = '/export/home/jrichter/data/WSJ0+CHiME3/test/clean'
-#noisy_dir = '/export/home/jrichter/data/WSJ0+CHiME3/test/noisy'
-sgmse_dir = '/export/home/jrichter/repos/sgmse/enhanced/haceomy_400_norm/'
+clean_dir = '/export/home/jrichter/data/WSJ0+CHiME3/test/clean'
+noisy_dir = '/export/home/jrichter/data/WSJ0+CHiME3/test/noisy'
+sgmse_dir = '/export/home/jrichter/repos/sgmse/enhanced/3hpyr94h_348/'
 
-clean_dir = '/export/home/jrichter/data/VoiceBank/valid/clean/'
-noisy_dir = '/export/home/jrichter/data/VoiceBank/valid/noisy/'
+#clean_dir = '/export/home/jrichter/data/VoiceBank/valid/clean/'
+#noisy_dir = '/export/home/jrichter/data/VoiceBank/valid/noisy/'
 
 
 # Model checkpoint
 #checkpoint_file = '/export/home/jrichter/repos/score-speech/sgmse_logs/SGMSE/sweet-resonance-97/epoch=325-step=39445.ckpt'
 #checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/2haceomy/checkpoints/epoch=295-step=214303.ckpt'
-checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/2haceomy/checkpoints/epoch=401-step=291047.ckpt'
+#checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/2haceomy/checkpoints/epoch=401-step=291047.ckpt'
+checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/3hpyr94h/checkpoints/epoch=348-step=139599.ckpt'
 
 # Settings
 sr = 16000

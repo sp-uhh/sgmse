@@ -67,6 +67,11 @@ def si_sdr(s, s_hat):
         alpha*s - s_hat)**2)
     return sdr
 
+def snr_dB(s,n):
+    s_power = 1/len(s)*np.sum(s**2)
+    n_power = 1/len(n)*np.sum(n**2)
+    snr_dB = 10*np.log10(s_power/n_power)
+    return snr_dB
 
 def pad_spec(Y):
     T = Y.size(3)
