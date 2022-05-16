@@ -67,14 +67,14 @@ if __name__ == '__main__':
           logger = WandbLogger(project="sgmse", entity='richter', log_model=True, save_dir="logs")
           logger.experiment.log_code(".")
 
-     early_stopping_pesq = EarlyStopping(monitor="pesq", mode="max", patience=5)
+     #early_stopping_pesq = EarlyStopping(monitor="pesq", mode="max", patience=5)
 
      # Initialize the Trainer and the DataModule
      trainer = pl.Trainer.from_argparse_args(
           arg_groups['pl.Trainer'],
           strategy=DDPPlugin(find_unused_parameters=False), logger=logger,
           log_every_n_steps=10, num_sanity_val_steps=0, 
-          callbacks=[early_stopping_pesq]
+          #callbacks=[early_stopping_pesq]
      )
 
      # Train model

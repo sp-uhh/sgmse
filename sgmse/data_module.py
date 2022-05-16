@@ -21,11 +21,17 @@ def get_window(window_type, window_length):
 
 class Specs(Dataset):
     def __init__(
-        self, data_dir, subset, dummy, shuffle_spec, num_frames,
+        self, data_dir, subset, dummy, shuffle_spec, num_frames, dns_format=False,
         normalize_audio=True, spec_transform=None, stft_kwargs=None, **ignored_kwargs
     ):
-        self.clean_files = sorted(glob(join(data_dir, subset) + '/clean/*.wav'))
         self.noisy_files = sorted(glob(join(data_dir, subset) + '/noisy/*.wav'))
+        if dns_format:
+            clean_dir = join(data_dir, subset) + '/clean/'
+            self.clean_files = [clean_dir + 'clean_fileid_' \
+                + noisy_file.split('/')[-1].split('_fileid_')[-1] for noisy_file in self.noisy_files]
+        else:
+            self.clean_files = sorted(glob(join(data_dir, subset) + '/clean/*.wav'))
+        
         self.dummy = dummy
         self.num_frames = num_frames
         self.shuffle_spec = shuffle_spec
@@ -80,13 +86,14 @@ class Specs(Dataset):
 
 class SpecsDataModule(pl.LightningDataModule):
     def __init__(
-        self, base_dir, batch_size=32,
+        self, base_dir, dns_format=False, batch_size=32,
         n_fft=510, hop_length=128, num_frames=256, window='sqrthann',
         num_workers=4, dummy=False, spec_factor=1, spec_abs_exponent=1,
         gpu=True, **kwargs
     ):
         super().__init__()
         self.base_dir = base_dir
+        self.dns_format = dns_format
         self.batch_size = batch_size
         self.n_fft = n_fft
         self.hop_length = hop_length
@@ -106,10 +113,13 @@ class SpecsDataModule(pl.LightningDataModule):
             **self.stft_kwargs, **self.kwargs
         )
         if stage == 'fit' or stage is None:
-            self.train_set = Specs(self.base_dir, 'train', self.dummy, True, **specs_kwargs)
-            self.valid_set = Specs(self.base_dir, 'valid', self.dummy, False, **specs_kwargs)
+            self.train_set = Specs(self.base_dir, 'train', self.dummy, True, 
+                dns_format=self.dns_format, **specs_kwargs)
+            self.valid_set = Specs(self.base_dir, 'valid', self.dummy, False, 
+                dns_format=self.dns_format, **specs_kwargs)
         if stage == 'test' or stage is None:
-            self.test_set = Specs(self.base_dir, 'test', self.dummy, False, **specs_kwargs)
+            self.test_set = Specs(self.base_dir, 'test', self.dummy, False, 
+                dns_format=self.dns_format, **specs_kwargs)
 
     def spec_fwd(self, spec):
         if self.spec_abs_exponent != 1:
@@ -161,6 +171,8 @@ class SpecsDataModule(pl.LightningDataModule):
         parser.add_argument("--base-dir", type=str, required=True,
             help="The base directory of the dataset. Should contain `train`, `valid` and `test` subdirectories, "
                 "each of which contain `clean` and `noisy` subdirectories.")
+        parser.add_argument("--dns-format", action="store_true",
+            help="File paths follow the DNS data description.")
         parser.add_argument("--batch-size", type=int, default=32,
             help="The batch size. 32 by default.")
         parser.add_argument("--n-fft", type=int, default=510,
