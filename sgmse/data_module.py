@@ -20,22 +20,24 @@ def get_window(window_type, window_length):
 
 
 class Specs(Dataset):
-    def __init__(
-        self, data_dir, subset, dummy, shuffle_spec, num_frames, dns_format=False,
-        normalize_audio=True, spec_transform=None, stft_kwargs=None, **ignored_kwargs
-    ):
-        self.noisy_files = sorted(glob(join(data_dir, subset) + '/noisy/*.wav'))
-        if dns_format:
+    def __init__(self, data_dir, subset, dummy, shuffle_spec, num_frames, 
+            format='default', normalize="noisy", spec_transform=None, 
+            stft_kwargs=None, **ignored_kwargs):
+
+        # Read file paths according to file naming format.  
+        if format == "default":
+            self.clean_files = sorted(glob(join(data_dir, subset) + '/clean/*.wav'))
+            self.noisy_files = sorted(glob(join(data_dir, subset) + '/noisy/*.wav'))
+        elif format == "dns":
+            self.noisy_files = sorted(glob(join(data_dir, subset) + '/noisy/*.wav'))
             clean_dir = join(data_dir, subset) + '/clean/'
             self.clean_files = [clean_dir + 'clean_fileid_' \
                 + noisy_file.split('/')[-1].split('_fileid_')[-1] for noisy_file in self.noisy_files]
-        else:
-            self.clean_files = sorted(glob(join(data_dir, subset) + '/clean/*.wav'))
-        
+
         self.dummy = dummy
         self.num_frames = num_frames
         self.shuffle_spec = shuffle_spec
-        self.normalize_audio = normalize_audio
+        self.normalize = normalize
         self.spec_transform = spec_transform
 
         assert all(k in stft_kwargs.keys() for k in ["n_fft", "hop_length", "center", "window"]), "misconfigured STFT kwargs"
@@ -46,8 +48,7 @@ class Specs(Dataset):
     def __getitem__(self, i):
         x, _ = load(self.clean_files[i])
         y, _ = load(self.noisy_files[i])
-        normfac = y.abs().max()
-
+        
         # formula applies for center=True
         target_len = (self.num_frames - 1) * self.hop_length
         current_len = x.size(-1)
@@ -65,10 +66,16 @@ class Specs(Dataset):
             x = F.pad(x, (pad//2, pad//2+(pad%2)), mode='constant')
             y = F.pad(y, (pad//2, pad//2+(pad%2)), mode='constant')
 
-        if self.normalize_audio:
-            # normalize both based on noisy speech, to ensure same clean signal power in x and y.
-            x = x / normfac
-            y = y / normfac
+        # normalize w.r.t to the noisy or the clean signal or not at all
+        # to ensure same clean signal power in x and y.
+        if self.normalize == "noisy":
+            normfac = y.abs().max()
+        elif self.normalize == "clean":
+            normfac = x.abs().max()
+        elif self.normalize == "not":
+            normfac = 1.0
+        x = x / normfac
+        y = y / normfac
 
         X = torch.stft(x, **self.stft_kwargs)
         Y = torch.stft(y, **self.stft_kwargs)
@@ -86,14 +93,14 @@ class Specs(Dataset):
 
 class SpecsDataModule(pl.LightningDataModule):
     def __init__(
-        self, base_dir, dns_format=False, batch_size=32,
+        self, base_dir, format='default', batch_size=32,
         n_fft=510, hop_length=128, num_frames=256, window='sqrthann',
         num_workers=4, dummy=False, spec_factor=1, spec_abs_exponent=1,
-        gpu=True, **kwargs
+        gpu=True, normalize='noisy', **kwargs
     ):
         super().__init__()
         self.base_dir = base_dir
-        self.dns_format = dns_format
+        self.format = format
         self.batch_size = batch_size
         self.n_fft = n_fft
         self.hop_length = hop_length
@@ -105,21 +112,25 @@ class SpecsDataModule(pl.LightningDataModule):
         self.spec_factor = spec_factor
         self.spec_abs_exponent = spec_abs_exponent
         self.gpu = gpu
+        self.normalize = normalize
         self.kwargs = kwargs
 
     def setup(self, stage=None):
-        specs_kwargs = dict(
-            stft_kwargs=self.stft_kwargs, num_frames=self.num_frames, spec_transform=self.spec_fwd,
-            **self.stft_kwargs, **self.kwargs
-        )
+        specs_kwargs = dict(stft_kwargs=self.stft_kwargs, 
+                            num_frames=self.num_frames, 
+                            spec_transform=self.spec_fwd, **self.stft_kwargs, 
+                            **self.kwargs)
         if stage == 'fit' or stage is None:
-            self.train_set = Specs(self.base_dir, 'train', self.dummy, True, 
-                dns_format=self.dns_format, **specs_kwargs)
-            self.valid_set = Specs(self.base_dir, 'valid', self.dummy, False, 
-                dns_format=self.dns_format, **specs_kwargs)
+            self.train_set = Specs(data_dir=self.base_dir, subset='train', 
+                dummy=self.dummy, shuffle_spec=True, format=self.format, 
+                normalize=self.normalize, **specs_kwargs)
+            self.valid_set = Specs(data_dir=self.base_dir, subset='valid', 
+                dummy=self.dummy, shuffle_spec=False, format=self.format, 
+                normalize=self.normalize, **specs_kwargs)
         if stage == 'test' or stage is None:
-            self.test_set = Specs(self.base_dir, 'test', self.dummy, False, 
-                dns_format=self.dns_format, **specs_kwargs)
+            self.test_set = Specs(data_dir=self.base_dir, subset='test', 
+                dummy=self.dummy, shuffle_spec=False, format=self.format, 
+                normalize=self.normalize, **specs_kwargs)
 
     def spec_fwd(self, spec):
         if self.spec_abs_exponent != 1:
@@ -171,8 +182,8 @@ class SpecsDataModule(pl.LightningDataModule):
         parser.add_argument("--base-dir", type=str, required=True,
             help="The base directory of the dataset. Should contain `train`, `valid` and `test` subdirectories, "
                 "each of which contain `clean` and `noisy` subdirectories.")
-        parser.add_argument("--dns-format", action="store_true",
-            help="File paths follow the DNS data description.")
+        parser.add_argument("--format", type=str, choices=("default", "dns"), default="default",
+            help="Read file paths according to file naming format.")
         parser.add_argument("--batch-size", type=int, default=32,
             help="The batch size. 32 by default.")
         parser.add_argument("--n-fft", type=int, default=510,
@@ -192,6 +203,8 @@ class SpecsDataModule(pl.LightningDataModule):
         parser.add_argument("--spec-abs-exponent", type=float, default=0.5,
             help="Exponent e for the transformation abs(z)**e * exp(1j*angle(z)). "
                 "1 by default; set to values < 1 to bring out quieter features.")
+        parser.add_argument("--normalize", type=str, choices=("clean", "noisy", "not"), default="noisy",
+            help="Normalize the input waveforms by the clean signal, the noisy signal, or not at all.")
         return parser
 
     def train_dataloader(self):

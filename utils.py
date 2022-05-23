@@ -2,6 +2,7 @@ import numpy as np
 import scipy.stats
 from scipy.signal import butter, sosfilt
 import torch
+import os
 
 
 def si_sdr_components(s_hat, s, n):
@@ -81,3 +82,9 @@ def pad_spec(Y):
         num_pad = 0
     pad2d = torch.nn.ZeroPad2d((0, num_pad, 0,0))
     return pad2d(Y)
+
+
+def ensure_dir(file_path):
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)

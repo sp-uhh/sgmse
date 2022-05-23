@@ -10,22 +10,28 @@ from sgmse.data_module import SpecsDataModule
 from sgmse.sdes import OUVESDE
 from sgmse.model import ScoreModel
 
-from utils import pad_spec
+from utils import pad_spec, ensure_dir
 
-# File directories
-clean_dir = '/export/home/jrichter/data/wsj0_chime3/test/clean'
-noisy_dir = '/export/home/jrichter/data/wsj0_chime3/test/noisy'
-sgmse_dir = '/export/home/jrichter/repos/sgmse/enhanced/3hpyr94h_999/'
+# WSJ0 + chime3
+# noisy_dir = '/export/home/jrichter/data/wsj0_chime3/test/noisy'
 
-#clean_dir = '/export/home/jrichter/data/VoiceBank/valid/clean/'
+# VoiceBank
 #noisy_dir = '/export/home/jrichter/data/VoiceBank/valid/noisy/'
+
+# DNS
+noisy_dir = '/data/DNS-Challenge2020/DNS-Challenge/datasets/test_set/synthetic/no_reverb/noisy/'
+
+sgmse_dir = '/export/home/jrichter/repos/sgmse/enhanced/DNS_zh14bo66_170/'
+ensure_dir(sgmse_dir)
 
 # Model checkpoint
 #checkpoint_file = '/export/home/jrichter/repos/score-speech/sgmse_logs/SGMSE/sweet-resonance-97/epoch=325-step=39445.ckpt'
 #checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/2haceomy/checkpoints/epoch=295-step=214303.ckpt'
 #checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/2haceomy/checkpoints/epoch=401-step=291047.ckpt'
 #checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/3hpyr94h/checkpoints/epoch=348-step=139599.ckpt'
-checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/3hpyr94h/checkpoints/epoch=999-step=399999.ckpt'
+#checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/3hpyr94h/checkpoints/epoch=999-step=399999.ckpt'
+checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/zh14bo66/checkpoints/epoch=170-step=481022.ckpt'
+
 
 # Settings
 sr = 16000
@@ -45,7 +51,6 @@ noisy_files = glob.glob('{}/*.wav'.format(noisy_dir))
 
 for noisy_file in tqdm(noisy_files):
     filename = noisy_file.split('/')[-1]
-    clean_file = '{}/{}'.format(clean_dir, filename)
     diffuse_file = '{}/{}'.format(sgmse_dir, filename)
     
     # Load wav
