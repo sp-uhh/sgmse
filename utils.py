@@ -3,6 +3,8 @@ import scipy.stats
 from scipy.signal import butter, sosfilt
 import torch
 import os
+from pesq import pesq
+from pystoi import stoi
 
 
 def si_sdr_components(s_hat, s, n):
@@ -88,3 +90,14 @@ def ensure_dir(file_path):
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+
+def print_metrics(x, y, x_hat, sr):
+    _si_sdr_mix = si_sdr(x, y)
+    _pesq_mix = pesq(sr, x, y, 'wb')
+    _estoi_mix = stoi(x, y, sr, extended=True)
+    _si_sdr = si_sdr(x, x_hat)
+    _pesq = pesq(sr, x, x_hat, 'wb')
+    _estoi = stoi(x, x_hat, sr, extended=True)
+    print(f'Mixture:  SI-SDR: {_si_sdr_mix:.2f}, PESQ: {_pesq_mix:.2f}, ESTOI: {_estoi_mix:.2f}')
+    print(f'SGMSE++:  SI-SDR: {_si_sdr:.2f}, PESQ: {_pesq:.2f}, ESTOI: {_estoi:.2f}')
