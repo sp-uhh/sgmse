@@ -25,7 +25,7 @@ if __name__ == '__main__':
      base_parser = ArgumentParser(add_help=False)
      parser = ArgumentParser()
      for parser_ in (base_parser, parser):
-          parser_.add_argument("--backbone", type=str, choices=BackboneRegistry.get_all_names(), required=True)
+          parser_.add_argument("--backbone", type=str, choices=BackboneRegistry.get_all_names(), default="ncsnpp")
           parser_.add_argument("--sde", type=str, choices=SDERegistry.get_all_names(), default="ouve")
           parser_.add_argument("--nolog", action='store_true', help="Turn off logging (for development purposes)")
           

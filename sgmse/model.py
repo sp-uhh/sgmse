@@ -15,27 +15,18 @@ from sgmse.util.inference import evaluate_model
 
 
 class ScoreModel(pl.LightningModule):
-    def __init__(self,
-        backbone: str, sde: str,
-        lr: float = 1e-4, ema_decay: float = 0.999,
-        t_eps: float = 3e-2, reduce_mean: bool = False, time_cond = "t",
-        transform: str = 'none', input_y: bool = True, nolog: bool = False,
-        num_eval_files: int = 0, weighting_exponent: float = 0.0, 
-        g_weighting_exponent: float = 0.0,
-        loss_type: str = 'mse', data_module_cls = None, **kwargs
-    ):
+    def __init__(self, backbone, sde, lr=1e-4, ema_decay=0.999, t_eps=3e-2, 
+            time_cond = "t", transform='none', input_y= True, nolog=False, 
+            num_eval_files=0, loss_type='mse', data_module_cls=None, **kwargs):
         """
         Create a new ScoreModel.
 
         Args:
-            backbone: The underlying backbone DNN that serves as a score-based model.
-                Must have an output dimensionality equal to the input dimensionality.
-            sde: The SDE to use for the diffusion.
+            backbone: Backbone DNN that serves as a score-based model.
+            sde: The SDE that defines the diffusion process.
             lr: The learning rate of the optimizer. (1e-4 by default).
             ema_decay: The decay constant of the parameter EMA (0.999 by default).
             t_eps: The minimum time to practically run for to avoid issues very close to zero (1e-5 by default).
-            reduce_mean: If `True`, average the loss across data dimensions.
-                Otherwise sum the loss across data dimensions.
         """
         super().__init__()
         # Initialize Backbone DNN
@@ -56,9 +47,6 @@ class ScoreModel(pl.LightningModule):
         self.ema = ExponentialMovingAverage(self.parameters(), decay=self.ema_decay)
         self._error_loading_ema = False
         self.t_eps = t_eps
-        self.reduce_mean = reduce_mean
-        self.weighting_exponent = weighting_exponent
-        self.g_weighting_exponent = g_weighting_exponent
         self.loss_type = loss_type
         self.num_eval_files = num_eval_files
         self.time_cond = time_cond
@@ -66,7 +54,6 @@ class ScoreModel(pl.LightningModule):
         self.save_hyperparameters(ignore=['nolog'])
         self.data_module = data_module_cls(**kwargs, gpu=kwargs.get('gpus', 0) > 0)
         # Construct the reduce-operation function for the loss calculation
-        self._reduce_op = torch.mean if self.reduce_mean else lambda *args, **kwargs: 0.5 * torch.sum(*args, **kwargs)
         self.nolog = nolog
 
     @staticmethod
@@ -74,13 +61,10 @@ class ScoreModel(pl.LightningModule):
         parser.add_argument("--lr", type=float, default=1e-4, help="The learning rate")
         parser.add_argument("--ema-decay", type=float, default=0.999, help="The parameter EMA decay constant (0.999 by default)")
         parser.add_argument("--t-eps", type=float, default=0.03, help="The minimum time (3e-2 by default)")
-        parser.add_argument("--reduce-mean", action="store_true", help="Average loss across all data dimensions (as opposed to summing)")
         parser.add_argument("--num-eval-files", type=int, default=0, help="Number of files for speech enhancement performance evaluation during training.")
         parser.add_argument("--input-y", dest='input_y', action="store_true", help="Provide y to the score model")
         parser.add_argument("--no-input-y", dest='input_y', action="store_false", help="Don't provide y to the score model")
         parser.set_defaults(input_y=True)
-        parser.add_argument("--weighting-exponent", type=float, default=0.0, help="The exponent for the loss weighting (lambda=std**exponent). Can be combined with --g-weighting-exponent.")
-        parser.add_argument("--g-weighting-exponent", type=float, default=0.0, help="The exponent for g in the loss weighting (lambda=g**exponent). Can be combined with --weighting-exponent.")
         parser.add_argument("--loss-type", type=str, default="mse", choices=("mse", "mae", "gaussian_entropy"), help="The type of loss function to use.")
         parser.add_argument("--time-cond", type=str, default="t", choices=("t", "std"), help="The time conditioner input to the DNN.")
         return parser
@@ -122,27 +106,15 @@ class ScoreModel(pl.LightningModule):
     def eval(self, no_ema=False):
         return self.train(False, no_ema=no_ema)
 
-    def _loss(self, err, sigmas, gs):
-        weighting = sigmas**self.weighting_exponent * gs**self.g_weighting_exponent
-
-        if self.loss_type == 'gaussian_entropy':
-            cov = self._weighted_mean(err.abs()**2, w=weighting)**2
-            pcov = torch.abs(self._weighted_mean(err**2, w=weighting))**2
-            loss = cov - pcov
-            return loss
-
+    def _loss(self, err):
         if self.loss_type == 'mse':
             losses = torch.square(err.abs())
         elif self.loss_type == 'mae':
             losses = err.abs()
-        losses = losses * weighting
-        # sum loss for each pixel
-        losses = self._reduce_op(losses.reshape(losses.shape[0], -1), dim=-1)
-        loss = torch.mean(losses)
+        # taken from reduce_op function: sum over channels and position and mean over batch dim
+        # presumably only important for absolute loss number, not for gradients
+        loss = torch.mean(0.5*torch.sum(losses.reshape(losses.shape[0], -1), dim=-1))
         return loss
-
-    def _weighted_mean(self, x, w):
-        return torch.mean(x * w)
 
     def _step(self, batch, batch_idx):
         x, y = batch
@@ -150,11 +122,10 @@ class ScoreModel(pl.LightningModule):
         mean, std = self.sde.marginal_prob(x, t, y)
         z = torch.randn_like(y)
         sigmas = std[:, None, None, None]
-        gs = self.sde.sde(x, t[:, None, None, None], y)[1]
         perturbed_data = mean + sigmas * z
         score = self(perturbed_data, t, y)
         err = score * sigmas + z
-        loss = self._loss(err, sigmas, gs)
+        loss = self._loss(err)
         return loss
 
     def training_step(self, batch, batch_idx):
@@ -165,33 +136,27 @@ class ScoreModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         loss = self._step(batch, batch_idx)
         self.log('valid_loss', loss, on_step=False, on_epoch=True)
-
         # Evaluate speech enhancement performance
         if batch_idx == 0 and self.num_eval_files != 0:
             pesq, si_sdr, estoi = evaluate_model(self, self.num_eval_files)
             self.log('pesq', pesq, on_step=False, on_epoch=True)
             self.log('si_sdr', si_sdr, on_step=False, on_epoch=True)
             self.log('estoi', estoi, on_step=False, on_epoch=True)
-
         return loss
 
     def forward(self, x, t, y):
         std = self.sde._std(t)
-
         if self.time_cond == "std":
             time_cond = std  # as in the original implementation
         else:
             time_cond = t # as done before 
-
         # Concatenate y as an extra channel
         if self.input_y == True:
             dnn_input = torch.cat([x, y], dim=1)
         else:
             dnn_input = x
-
         # not sure if the minus and scaling is important here - taken from Song for VPSDE case
         score = -self.dnn(dnn_input, time_cond)
-
         return score
 
     def to(self, *args, **kwargs):
