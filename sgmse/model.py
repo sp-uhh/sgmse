@@ -18,10 +18,10 @@ class ScoreModel(pl.LightningModule):
     def __init__(self,
         backbone: str, sde: str,
         lr: float = 1e-4, ema_decay: float = 0.999,
-        t_eps: float = 3e-2, reduce_mean: bool = False,
+        t_eps: float = 3e-2, reduce_mean: bool = False, time_cond = "t",
         transform: str = 'none', input_y: bool = True, nolog: bool = False,
         num_eval_files: int = 0, weighting_exponent: float = 0.0, 
-        g_weighting_exponent: float = 0.0, output_std_exponent: float = -1.,
+        g_weighting_exponent: float = 0.0,
         loss_type: str = 'mse', data_module_cls = None, **kwargs
     ):
         """
@@ -51,7 +51,6 @@ class ScoreModel(pl.LightningModule):
         sde_cls = SDERegistry.get_by_name(sde)
         self.sde = sde_cls(**kwargs)
         # Store hyperparams and save them
-        self.output_std_exponent = output_std_exponent
         self.lr = lr
         self.ema_decay = ema_decay
         self.ema = ExponentialMovingAverage(self.parameters(), decay=self.ema_decay)
@@ -62,6 +61,7 @@ class ScoreModel(pl.LightningModule):
         self.g_weighting_exponent = g_weighting_exponent
         self.loss_type = loss_type
         self.num_eval_files = num_eval_files
+        self.time_cond = time_cond
 
         self.save_hyperparameters(ignore=['nolog'])
         self.data_module = data_module_cls(**kwargs, gpu=kwargs.get('gpus', 0) > 0)
@@ -79,10 +79,10 @@ class ScoreModel(pl.LightningModule):
         parser.add_argument("--input-y", dest='input_y', action="store_true", help="Provide y to the score model")
         parser.add_argument("--no-input-y", dest='input_y', action="store_false", help="Don't provide y to the score model")
         parser.set_defaults(input_y=True)
-        parser.add_argument("--output-std-exponent", type=float, default=0.0, help="Weight model output by (std**exponent). Default is 0.")
         parser.add_argument("--weighting-exponent", type=float, default=0.0, help="The exponent for the loss weighting (lambda=std**exponent). Can be combined with --g-weighting-exponent.")
         parser.add_argument("--g-weighting-exponent", type=float, default=0.0, help="The exponent for g in the loss weighting (lambda=g**exponent). Can be combined with --weighting-exponent.")
         parser.add_argument("--loss-type", type=str, default="mse", choices=("mse", "mae", "gaussian_entropy"), help="The type of loss function to use.")
+        parser.add_argument("--time-cond", type=str, default="t", choices=("t", "std"), help="The time conditioner input to the DNN.")
         return parser
 
     def configure_optimizers(self):
@@ -176,23 +176,27 @@ class ScoreModel(pl.LightningModule):
         return loss
 
     def forward(self, x, t, y):
-        # not sure if the minus and scaling is important here - taken from Song for VPSDE case
-        score = -self._raw_dnn_output(x, t, y)
         std = self.sde._std(t)
-        score = score * std[:, None, None, None]**self.output_std_exponent
+
+        if self.time_cond == "std":
+            time_cond = std  # as in the original implementation
+        else:
+            time_cond = t # as done before 
+
+        # Concatenate y as an extra channel
+        if self.input_y == True:
+            dnn_input = torch.cat([x, y], dim=1)
+        else:
+            dnn_input = x
+
+        # not sure if the minus and scaling is important here - taken from Song for VPSDE case
+        score = -self.dnn(dnn_input, time_cond)
+
         return score
 
     def to(self, *args, **kwargs):
         self.ema.to(*args, **kwargs)
         return super().to(*args, **kwargs)
-
-    def _raw_dnn_output(self, x, t, y):
-        """only for debugging"""
-        if self.input_y == True:
-            dnn_input = torch.cat([x, y], dim=1)
-        else:
-            dnn_input = x
-        return self.dnn(dnn_input, t)
 
     def get_pc_sampler(self, predictor_name, corrector_name, y, N=None, minibatch=None, **kwargs):
         N = self.sde.N if N is None else N
