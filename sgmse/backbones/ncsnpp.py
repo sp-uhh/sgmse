@@ -15,6 +15,8 @@
 
 # pylint: skip-file
 
+from email.policy import default
+from xmlrpc.client import Boolean
 from .ncsnpp_utils import utils, layers, layerspp, normalization
 import torch.nn as nn
 import functools
@@ -202,7 +204,7 @@ class NCSNpp(nn.Module):
         pyramid_ch = 0
         # Upsampling block
         for i_level in reversed(range(num_resolutions)):
-            for i_block in range(num_res_blocks + 1):  # +1 blocks in upsampling because of skip connection from combiner
+            for i_block in range(num_res_blocks + 1):  # +1 blocks in upsampling because of skip connection from combiner (after downsampling)
                 out_ch = nf * ch_mult[i_level]
                 modules.append(ResnetBlock(in_ch=in_ch + hs_c.pop(), out_ch=out_ch))
                 in_ch = out_ch
@@ -253,6 +255,7 @@ class NCSNpp(nn.Module):
     @staticmethod
     def add_argparse_args(parser):
         parser.add_argument("--centered", action="store_true", help="The data is already centered [-1, 1]")
+        parser.add_argument("--no-scale-by-sigma", dest='scale-by-sigma', action="store_false", help="Scale model output by std.")
         return parser
 
     def forward(self, x, time_cond):
@@ -296,21 +299,24 @@ class NCSNpp(nn.Module):
         if self.progressive_input != 'none':
             input_pyramid = x
 
-        hs = [modules[m_idx](x)]  # Input layer: Conv2d
+        # Input layer: Conv2d: 4ch -> 128ch
+        hs = [modules[m_idx](x)]  
         m_idx += 1
+
+        # Down path in U-Net
         for i_level in range(self.num_resolutions):
             # Residual blocks for this resolution
             for i_block in range(self.num_res_blocks):
                 h = modules[m_idx](hs[-1], temb)
                 m_idx += 1
-                # edit: check H dim (-2) not W dim (-1)
-                if h.shape[-2] in self.attn_resolutions:
+                # Attention layer (optional)
+                if h.shape[-2] in self.attn_resolutions: # edit: check H dim (-2) not W dim (-1)
                     h = modules[m_idx](h)
                     m_idx += 1
-
                 hs.append(h)
 
-            if i_level != self.num_resolutions - 1:  # Downsampling
+            # Downsampling
+            if i_level != self.num_resolutions - 1:  
                 if self.resblock_type == 'ddpm':
                     h = modules[m_idx](hs[-1])
                     m_idx += 1
@@ -331,10 +337,9 @@ class NCSNpp(nn.Module):
                     else:
                         input_pyramid = input_pyramid + h
                     h = input_pyramid
-
                 hs.append(h)
 
-        h = hs[-1]
+        h = hs[-1] # actualy equal to: h = h
         h = modules[m_idx](h, temb)  # ResNet block
         m_idx += 1
         h = modules[m_idx](h)  # Attention block 
@@ -358,9 +363,9 @@ class NCSNpp(nn.Module):
             if self.progressive != 'none':
                 if i_level == self.num_resolutions - 1:
                     if self.progressive == 'output_skip':
-                        pyramid = self.act(modules[m_idx](h))
+                        pyramid = self.act(modules[m_idx](h))  # GroupNorm
                         m_idx += 1
-                        pyramid = modules[m_idx](pyramid)
+                        pyramid = modules[m_idx](pyramid)  # Conv2D: 256 -> 4
                         m_idx += 1
                     elif self.progressive == 'residual':
                         pyramid = self.act(modules[m_idx](h))
@@ -371,8 +376,8 @@ class NCSNpp(nn.Module):
                         raise ValueError(f'{self.progressive} is not a valid name.')
                 else:
                     if self.progressive == 'output_skip':
-                        pyramid = self.pyramid_upsample(pyramid)
-                        pyramid_h = self.act(modules[m_idx](h))
+                        pyramid = self.pyramid_upsample(pyramid)  # Upsample
+                        pyramid_h = self.act(modules[m_idx](h))  # GroupNorm 
                         m_idx += 1
                         pyramid_h = modules[m_idx](pyramid_h)
                         m_idx += 1
@@ -388,12 +393,13 @@ class NCSNpp(nn.Module):
                     else:
                         raise ValueError(f'{self.progressive} is not a valid name')
 
+            # Upsampling Layer
             if i_level != 0:
                 if self.resblock_type == 'ddpm':
                     h = modules[m_idx](h)
                     m_idx += 1
                 else:
-                    h = modules[m_idx](h, temb)
+                    h = modules[m_idx](h, temb)  # Upspampling
                     m_idx += 1
 
         assert not hs

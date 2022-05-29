@@ -118,9 +118,9 @@ class ScoreModel(pl.LightningModule):
 
     def _step(self, batch, batch_idx):
         x, y = batch
-        t = torch.rand(y.shape[0], device=x.device) * (self.sde.T - self.t_eps) + self.t_eps
+        t = torch.rand(x.shape[0], device=x.device) * (self.sde.T - self.t_eps) + self.t_eps
         mean, std = self.sde.marginal_prob(x, t, y)
-        z = torch.randn_like(y)
+        z = torch.randn_like(x)  # i.i.d. normal distributed with var=0.5
         sigmas = std[:, None, None, None]
         perturbed_data = mean + sigmas * z
         score = self(perturbed_data, t, y)

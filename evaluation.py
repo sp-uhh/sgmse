@@ -21,7 +21,7 @@ from utils import pad_spec, ensure_dir
 # DNS
 noisy_dir = '/data/DNS-Challenge2020/DNS-Challenge/datasets/test_set/synthetic/no_reverb/noisy/'
 
-sgmse_dir = '/export/home/jrichter/repos/sgmse/enhanced/dns_test_wsj0/'
+sgmse_dir = '/export/home/jrichter/repos/sgmse/enhanced/dns_test_dns_chime/'
 ensure_dir(sgmse_dir)
 
 # Model checkpoint
@@ -31,9 +31,13 @@ ensure_dir(sgmse_dir)
 #checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/3hpyr94h/checkpoints/epoch=348-step=139599.ckpt'
 
 # WSJ0
-checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/3hpyr94h/checkpoints/epoch=999-step=399999.ckpt'
+#checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/3hpyr94h/checkpoints/epoch=999-step=399999.ckpt'
 
+# dns-h 
 # checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/zh14bo66/checkpoints/epoch=170-step=481022.ckpt'
+
+# dns_chime
+checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/3fvlc694/checkpoints/epoch=112-step=54126.ckpt'
 
 
 # Settings
