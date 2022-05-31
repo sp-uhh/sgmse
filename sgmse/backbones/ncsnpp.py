@@ -41,7 +41,7 @@ class NCSNpp(nn.Module):
 
     def __init__(self, 
         sigma_max = 348,
-        scale_by_sigma = True,
+        scale_by_sigma = False,
         ema_rate = 0.999,
         normalization = 'GroupNorm',
         nonlinearity = 'swish',
@@ -66,7 +66,7 @@ class NCSNpp(nn.Module):
         embedding_type = 'fourier',
         num_channels = 4,
         dropout = .0,
-        centered = False,
+        centered = True,
         **kwargs):
         super().__init__()
         self.act = act = get_act(nonlinearity)
@@ -254,8 +254,8 @@ class NCSNpp(nn.Module):
 
     @staticmethod
     def add_argparse_args(parser):
-        parser.add_argument("--centered", action="store_true", help="The data is already centered [-1, 1]")
-        parser.add_argument("--no-scale-by-sigma", dest='scale-by-sigma', action="store_false", help="Scale model output by std.")
+        parser.add_argument("--no-centered", dest="centered", action="store_false", help="The data is not centered [-1, 1]")
+        parser.add_argument("--scale-by-sigma", action="store_true", help="Scale model output by std.")
         return parser
 
     def forward(self, x, time_cond):
