@@ -59,14 +59,14 @@ class ScoreModel(pl.LightningModule):
     @staticmethod
     def add_argparse_args(parser):
         parser.add_argument("--lr", type=float, default=1e-4, help="The learning rate")
-        parser.add_argument("--ema-decay", type=float, default=0.999, help="The parameter EMA decay constant (0.999 by default)")
-        parser.add_argument("--t-eps", type=float, default=0.03, help="The minimum time (3e-2 by default)")
-        parser.add_argument("--num-eval-files", type=int, default=0, help="Number of files for speech enhancement performance evaluation during training.")
-        parser.add_argument("--input-y", dest='input_y', action="store_true", help="Provide y to the score model")
-        parser.add_argument("--no-input-y", dest='input_y', action="store_false", help="Don't provide y to the score model")
+        parser.add_argument("--ema_decay", type=float, default=0.999, help="The parameter EMA decay constant (0.999 by default)")
+        parser.add_argument("--t_eps", type=float, default=0.03, help="The minimum time (3e-2 by default)")
+        parser.add_argument("--num_eval_files", type=int, default=0, help="Number of files for speech enhancement performance evaluation during training.")
+        parser.add_argument("--input_y", dest='input_y', action="store_true", help="Provide y to the score model")
+        parser.add_argument("--no_input_y", dest='input_y', action="store_false", help="Don't provide y to the score model")
         parser.set_defaults(input_y=True)
-        parser.add_argument("--loss-type", type=str, default="mse", choices=("mse", "mae", "gaussian_entropy"), help="The type of loss function to use.")
-        parser.add_argument("--time-cond", type=str, default="t", choices=("t", "std"), help="The time conditioner input to the DNN.")
+        parser.add_argument("--loss_type", type=str, default="mse", choices=("mse", "mae", "gaussian_entropy"), help="The type of loss function to use.")
+        parser.add_argument("--time_cond", type=str, default="t", choices=("t", "std"), help="The time conditioner input to the DNN.")
         return parser
 
     def configure_optimizers(self):
