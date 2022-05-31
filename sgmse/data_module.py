@@ -179,28 +179,28 @@ class SpecsDataModule(pl.LightningDataModule):
 
     @staticmethod
     def add_argparse_args(parser):
-        parser.add_argument("--base-dir", type=str, required=True,
+        parser.add_argument("--base_dir", type=str, required=True,
             help="The base directory of the dataset. Should contain `train`, `valid` and `test` subdirectories, "
                 "each of which contain `clean` and `noisy` subdirectories.")
         parser.add_argument("--format", type=str, choices=("default", "dns"), default="default",
             help="Read file paths according to file naming format.")
-        parser.add_argument("--batch-size", type=int, default=32,
+        parser.add_argument("--batch_size", type=int, default=32,
             help="The batch size. 32 by default.")
-        parser.add_argument("--n-fft", type=int, default=510,
+        parser.add_argument("--n_fft", type=int, default=510,
             help="Number of FFT bins. 510 by default.")   # to assure 256 freq bins
-        parser.add_argument("--hop-length", type=int, default=128,
+        parser.add_argument("--hop_length", type=int, default=128,
             help="Window hop length. 128 by default.")
-        parser.add_argument("--num-frames", type=int, default=256,
+        parser.add_argument("--num_frames", type=int, default=256,
             help="Number of frames for the dataset. 256 by default.")
         parser.add_argument("--window", type=str, choices=("sqrthann", "hann"), default="hann",
             help="The window function to use for the STFT. 'sqrthann' by default.")
-        parser.add_argument("--num-workers", type=int, default=4,
+        parser.add_argument("--num_workers", type=int, default=4,
             help="Number of workers to use for DataLoaders. 4 by default.")
         parser.add_argument("--dummy", action="store_true",
             help="Use reduced dummy dataset for prototyping.")
-        parser.add_argument("--spec-factor", type=float, default=0.33,
+        parser.add_argument("--spec_factor", type=float, default=0.33,
             help="Factor to multiply complex STFT coefficients by. 1 by default (no effect).")
-        parser.add_argument("--spec-abs-exponent", type=float, default=0.5,
+        parser.add_argument("--spec_abs_exponent", type=float, default=0.5,
             help="Exponent e for the transformation abs(z)**e * exp(1j*angle(z)). "
                 "1 by default; set to values < 1 to bring out quieter features.")
         parser.add_argument("--normalize", type=str, choices=("clean", "noisy", "not"), default="noisy",
