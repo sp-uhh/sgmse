@@ -213,7 +213,7 @@ class SpecsDataModule(pl.LightningDataModule):
                 "1 by default; set to values < 1 to bring out quieter features.")
         parser.add_argument("--normalize", type=str, choices=("clean", "noisy", "not"), default="noisy",
             help="Normalize the input waveforms by the clean signal, the noisy signal, or not at all.")
-        parser.add_argument("--transfrom_type", type=str, choices=("exponent", "log"), default="exponent",
+        parser.add_argument("--transform_type", type=str, choices=("exponent", "log"), default="exponent",
             help="Spectogram transformation for input representation.")
         return parser
 
