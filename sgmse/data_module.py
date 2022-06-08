@@ -96,7 +96,7 @@ class SpecsDataModule(pl.LightningDataModule):
         self, base_dir, format='default', batch_size=32,
         n_fft=510, hop_length=128, num_frames=256, window='sqrthann',
         num_workers=4, dummy=False, spec_factor=0.33, spec_abs_exponent=0.5,
-        gpu=True, normalize='noisy', **kwargs
+        gpu=True, normalize='noisy', transform_type="exponent", **kwargs
     ):
         super().__init__()
         self.base_dir = base_dir
@@ -113,6 +113,7 @@ class SpecsDataModule(pl.LightningDataModule):
         self.spec_abs_exponent = spec_abs_exponent
         self.gpu = gpu
         self.normalize = normalize
+        self.transform_type = transform_type
         self.kwargs = kwargs
 
     def setup(self, stage=None):
@@ -133,18 +134,25 @@ class SpecsDataModule(pl.LightningDataModule):
                 normalize=self.normalize, **specs_kwargs)
 
     def spec_fwd(self, spec):
-        if self.spec_abs_exponent != 1:
-            # only do this calculation if spec_exponent != 1, otherwise it's quite a bit of wasted computation
-            # and introduced numerical error
-            e = self.spec_abs_exponent
-            spec = spec.abs()**e * torch.exp(1j * spec.angle())
-        return spec * self.spec_factor
+        if self.transform_type == "exponent":
+            if self.spec_abs_exponent != 1:
+                # only do this calculation if spec_exponent != 1, otherwise it's quite a bit of wasted computation
+                # and introduced numerical error
+                e = self.spec_abs_exponent
+                spec = spec.abs()**e * torch.exp(1j * spec.angle())
+            spec = spec * self.spec_factor
+        elif self.transfer_type == "log":
+            spec = torch.log(1 + spec.abs()) * torch.exp(1j * spec.angle())
+        return spec
 
     def spec_back(self, spec):
-        spec = spec / self.spec_factor
-        if self.spec_abs_exponent != 1:
-            e = self.spec_abs_exponent
-            spec = spec.abs()**(1/e) * torch.exp(1j * spec.angle())
+        if self.transform_type == "exponent":
+            spec = spec / self.spec_factor
+            if self.spec_abs_exponent != 1:
+                e = self.spec_abs_exponent
+                spec = spec.abs()**(1/e) * torch.exp(1j * spec.angle())
+        elif self.transfer_type == "log":
+            spec = (torch.exp(spec.abs()) - 1) * torch.exp(1j * spec.angle())
         return spec
 
     @property
@@ -205,6 +213,8 @@ class SpecsDataModule(pl.LightningDataModule):
                 "1 by default; set to values < 1 to bring out quieter features.")
         parser.add_argument("--normalize", type=str, choices=("clean", "noisy", "not"), default="noisy",
             help="Normalize the input waveforms by the clean signal, the noisy signal, or not at all.")
+        parser.add_argument("--transfrom_type", type=str, choices=("exponent", "log"), default="exponent",
+            help="Spectogram transformation for input representation.")
         return parser
 
     def train_dataloader(self):
