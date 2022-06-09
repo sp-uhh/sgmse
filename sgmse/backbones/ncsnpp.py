@@ -66,7 +66,7 @@ class NCSNpp(nn.Module):
         embedding_type = 'fourier',
         num_channels = 4,
         dropout = .0,
-        centered = True,
+        centered = False,
         **kwargs):
         super().__init__()
         self.act = act = get_act(nonlinearity)
