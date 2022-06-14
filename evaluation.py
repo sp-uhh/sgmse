@@ -65,9 +65,6 @@ if __name__ == '__main__':
     model.eval(no_ema=False)
     model.cuda()
 
-    # For 2hacemony model
-    model.dnn.centered = False
-
     noisy_files = sorted(glob.glob('{}/*.wav'.format(noisy_dir)))
 
     for noisy_file in tqdm(noisy_files):

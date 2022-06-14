@@ -143,6 +143,8 @@ class SpecsDataModule(pl.LightningDataModule):
             spec = spec * self.spec_factor
         elif self.transform_type == "log":
             spec = torch.log(1 + spec.abs()) * torch.exp(1j * spec.angle())
+        elif self.transform_type == "none":
+            spec = spec
         return spec
 
     def spec_back(self, spec):
@@ -153,6 +155,8 @@ class SpecsDataModule(pl.LightningDataModule):
                 spec = spec.abs()**(1/e) * torch.exp(1j * spec.angle())
         elif self.transform_type == "log":
             spec = (torch.exp(spec.abs()) - 1) * torch.exp(1j * spec.angle())
+        elif self.transform_type == "none":
+            spec = spec
         return spec
 
     @property
@@ -213,7 +217,7 @@ class SpecsDataModule(pl.LightningDataModule):
                 "1 by default; set to values < 1 to bring out quieter features.")
         parser.add_argument("--normalize", type=str, choices=("clean", "noisy", "not"), default="noisy",
             help="Normalize the input waveforms by the clean signal, the noisy signal, or not at all.")
-        parser.add_argument("--transform_type", type=str, choices=("exponent", "log"), default="exponent",
+        parser.add_argument("--transform_type", type=str, choices=("exponent", "log", "none"), default="exponent",
             help="Spectogram transformation for input representation.")
         return parser
 
