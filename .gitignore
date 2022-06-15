@@ -25,6 +25,7 @@ figures/
 listen/
 enhanced/
 checkpoints/
+baselines/
 
 # eshell files
 /eshell/history

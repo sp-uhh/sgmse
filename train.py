@@ -70,10 +70,12 @@ if __name__ == '__main__':
 
      #early_stopping_pesq = EarlyStopping(monitor="pesq", mode="max", patience=5)
 
-     checkpoint_callback_pesq = ModelCheckpoint(dirpath="logs/sgmse/", save_top_k=2, 
-          monitor="pesq", mode="max", filename='{epoch}-{pesq:.2f}')
-     checkpoint_callback_si_sdr = ModelCheckpoint(dirpath="logs/sgmse/", save_top_k=2, 
-          monitor="si_sdr", mode="max", filename='{epoch}-{si_sdr:.2f}')
+     checkpoint_callback_last = ModelCheckpoint(dirpath='logs/sgmse/{logger.version}',
+          save_last=True, filename='{epoch}-last')
+     checkpoint_callback_pesq = ModelCheckpoint(dirpath='logs/sgmse/{logger.version}', 
+          save_top_k=2, monitor="pesq", mode="max", filename='{epoch}-{pesq:.2f}')
+     checkpoint_callback_si_sdr = ModelCheckpoint(dirpath='logs/sgmse/{logger.version}', 
+          save_top_k=2, monitor="si_sdr", mode="max", filename='{epoch}-{si_sdr:.2f}')
 
 
      # Initialize the Trainer and the DataModule
@@ -81,7 +83,8 @@ if __name__ == '__main__':
           arg_groups['pl.Trainer'],
           strategy=DDPPlugin(find_unused_parameters=False), logger=logger,
           log_every_n_steps=10, num_sanity_val_steps=0, 
-          callbacks=[checkpoint_callback_pesq, checkpoint_callback_si_sdr]
+          callbacks=[checkpoint_callback_last, checkpoint_callback_pesq, 
+               checkpoint_callback_si_sdr]
      )
 
      # Train model
