@@ -70,11 +70,11 @@ if __name__ == '__main__':
 
      #early_stopping_pesq = EarlyStopping(monitor="pesq", mode="max", patience=5)
 
-     checkpoint_callback_last = ModelCheckpoint(dirpath='logs/sgmse/{logger.version}',
+     checkpoint_callback_last = ModelCheckpoint(dirpath=f"logs/sgmse/{logger.version}",
           save_last=True, filename='{epoch}-last')
-     checkpoint_callback_pesq = ModelCheckpoint(dirpath='logs/sgmse/{logger.version}', 
+     checkpoint_callback_pesq = ModelCheckpoint(dirpath=f"logs/sgmse/{logger.version}", 
           save_top_k=2, monitor="pesq", mode="max", filename='{epoch}-{pesq:.2f}')
-     checkpoint_callback_si_sdr = ModelCheckpoint(dirpath='logs/sgmse/{logger.version}', 
+     checkpoint_callback_si_sdr = ModelCheckpoint(dirpath=f"logs/sgmse/{logger.version}", 
           save_top_k=2, monitor="si_sdr", mode="max", filename='{epoch}-{si_sdr:.2f}')
 
 
