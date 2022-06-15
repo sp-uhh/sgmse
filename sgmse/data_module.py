@@ -143,6 +143,7 @@ class SpecsDataModule(pl.LightningDataModule):
             spec = spec * self.spec_factor
         elif self.transform_type == "log":
             spec = torch.log(1 + spec.abs()) * torch.exp(1j * spec.angle())
+            spec = spec * self.spec_factor
         elif self.transform_type == "none":
             spec = spec
         return spec
@@ -154,6 +155,7 @@ class SpecsDataModule(pl.LightningDataModule):
                 e = self.spec_abs_exponent
                 spec = spec.abs()**(1/e) * torch.exp(1j * spec.angle())
         elif self.transform_type == "log":
+            spec = spec / self.spec_factor
             spec = (torch.exp(spec.abs()) - 1) * torch.exp(1j * spec.angle())
         elif self.transform_type == "none":
             spec = spec
