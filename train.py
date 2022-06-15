@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 from sgmse.backbones.shared import BackboneRegistry
 from sgmse.data_module import SpecsDataModule
@@ -69,12 +70,18 @@ if __name__ == '__main__':
 
      #early_stopping_pesq = EarlyStopping(monitor="pesq", mode="max", patience=5)
 
+     checkpoint_callback_pesq = ModelCheckpoint(dirpath="logs/sgmse/", save_top_k=2, 
+          monitor="pesq", mode="max", filename='{epoch}-{pesq:.2f}')
+     checkpoint_callback_si_sdr = ModelCheckpoint(dirpath="logs/sgmse/", save_top_k=2, 
+          monitor="si_sdr", mode="max", filename='{epoch}-{si_sdr:.2f}')
+
+
      # Initialize the Trainer and the DataModule
      trainer = pl.Trainer.from_argparse_args(
           arg_groups['pl.Trainer'],
           strategy=DDPPlugin(find_unused_parameters=False), logger=logger,
           log_every_n_steps=10, num_sanity_val_steps=0, 
-          #callbacks=[early_stopping_pesq]
+          callbacks=[checkpoint_callback_pesq, checkpoint_callback_si_sdr]
      )
 
      # Train model
