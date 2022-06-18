@@ -101,3 +101,9 @@ def print_metrics(x, y, x_hat, sr):
     _estoi = stoi(x, x_hat, sr, extended=True)
     print(f'Mixture:  SI-SDR: {_si_sdr_mix:.2f}, PESQ: {_pesq_mix:.2f}, ESTOI: {_estoi_mix:.2f}')
     print(f'SGMSE++:  SI-SDR: {_si_sdr:.2f}, PESQ: {_pesq:.2f}, ESTOI: {_estoi:.2f}')
+
+def mean_std(data):
+    data = data[~np.isnan(data)]
+    mean = np.mean(data)
+    std = np.std(data)
+    return mean, std

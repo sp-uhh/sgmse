@@ -20,7 +20,6 @@ if __name__ == '__main__':
     parser.add_argument("train", type=str, help="Specify train set.")
     parser.add_argument("--test_dir", type=str, required=True, help='Directory containing the test data')
     parser.add_argument("--ckpt", type=str,  help='Path to model checkpoint.')
-    
     args = parser.parse_args()
 
     noisy_dir = args.test_dir
