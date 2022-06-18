@@ -16,20 +16,14 @@ from utils import pad_spec, ensure_dir
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--test", type=str, help='Data set used for the test.', 
-        choices=("wsj0_chime3", "voicebank", "dns_chime3"), required=True)
-    parser.add_argument("--train", type=str, help='Data set used for training.',
-        choices=("wsj0_chime3", "voicebank", "dns_chime3"), required=True)
+    parser.add_argument("test", type=str, help="Specify test set.")
+    parser.add_argument("train", type=str, help="Specify train set.")
+    parser.add_argument("--test_dir", type=str, required=True, help='Directory containing the test data')
     parser.add_argument("--ckpt", type=str,  help='Path to model checkpoint.')
     
     args = parser.parse_args()
 
-    if args.test == "wsj0_chime3":
-        noisy_dir = '/export/home/jrichter/data/wsj0_chime3/test/noisy'
-    elif args.test == "voicebank":
-        noisy_dir = '/export/home/jrichter/data/VoiceBank/valid/noisy/'
-    elif args.test == "dns_chime3":
-        noisy_dir = '/export/home/jrichter/data/dns_chime3/test/noisy/'
+    noisy_dir = args.test_dir
 
     target_dir = "/export/home/jrichter/repos/sgmse/enhanced/test_{}/train_{}/".format(
         args.test, args.train) 
@@ -38,16 +32,12 @@ if __name__ == '__main__':
 
     # SGMSE
     #checkpoint_file = '/export/home/jrichter/repos/score-speech/sgmse_logs/SGMSE/sweet-resonance-97/epoch=325-step=39445.ckpt'
-
     # VB-DMD
     #checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/2haceomy/checkpoints/epoch=401-step=291047.ckpt'
-
     # WSJ0
     #checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/3hpyr94h/checkpoints/epoch=999-step=399999.ckpt'
-
     # dns_chime
     #checkpoint_file = '/export/home/jrichter/repos/sgmse/logs/sgmse/1dbja6ni/checkpoints/epoch=222-step=174831.ckpt'
-
 
     checkpoint_file = args.ckpt
 
