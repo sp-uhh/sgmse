@@ -16,9 +16,12 @@ from utils import energy_ratios, mean_conf_int, Method, si_sdr, mean_std
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--test", nargs="+", default=[], help="Specify test set.")
-    parser.add_argument("--train", nargs="+", default=[], help="Specify train set.")
-    parser.add_argument("--base", nargs="+", default=[], help="Specify the base dir.")
+    parser.add_argument("--test", nargs="+", required=True, default=[], 
+        help="Specify list of test set identifier: 'base_dir/test_\{test\}")
+    parser.add_argument("--train", nargs="+", required=True, default=[], 
+        help="Specify list of train set identifier: 'base_dir/train_\{train\}'.")
+    parser.add_argument("--base", nargs="+", required=True, default=[], 
+        help="Specify the base dir.")
     parser.add_argument("--basic", action="store_true", default=False, help="Evaluate only the basic metrics")
     args = parser.parse_args()
 
@@ -91,6 +94,14 @@ if __name__ == '__main__':
             print("PESQ: {:.2f} ± {:.2f}".format(*mean_std(df["pesq"].to_numpy())))
             print("ESTOI: {:.2f} ± {:.2f}".format(*mean_std(df["estoi"].to_numpy())))
             print("SI-SDR: {:.1f} ± {:.1f}".format(*mean_std(df["si_sdr"].to_numpy())))
+        else:
+            print(enhanced_dir)
+            print("POLQA: {:.2f} ± {:.2f}".format(*mean_std(df["polqa"].to_numpy())))
+            print("PESQ: {:.2f} ± {:.2f}".format(*mean_std(df["pesq"].to_numpy())))
+            print("ESTOI: {:.2f} ± {:.2f}".format(*mean_std(df["estoi"].to_numpy())))
+            print("SI-SDR: {:.1f} ± {:.1f}".format(*mean_std(df["si_sdr"].to_numpy())))
+            print("SI-SIR: {:.1f} ± {:.1f}".format(*mean_std(df["si_sir"].to_numpy())))
+            print("SI-SAR: {:.1f} ± {:.1f}".format(*mean_std(df["si_sar"].to_numpy())))
 
         # Save DataFrame as csv file
         if basic:
