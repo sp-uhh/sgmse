@@ -9,7 +9,7 @@ from uhh_sp.evaluation import polqa
 from pystoi import stoi
 from pysepm import composite, SNRseg
 from argparse import ArgumentParser
-
+from __paths__ import wsj0_dir, vb_dir
 
 from utils import energy_ratios, mean_conf_int, Method, si_sdr, mean_std
 
@@ -31,11 +31,11 @@ if __name__ == '__main__':
 
     for i, base_dir in enumerate(base_dirs):
         if test_set[i][:4] == "wsj0":
-            clean_dir = "/export/home/jrichter/data/wsj0_chime3/test/clean"
-            noisy_dir = "/export/home/jrichter/data/wsj0_chime3/test/noisy"
+            clean_dir = join(wsj0_dir, "test/clean")
+            noisy_dir = join(wsj0_dir, "test/noisy")
         elif test_set[i][:2] == "vb":
-            clean_dir = '/export/home/jrichter/data/VoiceBank/valid/clean'
-            noisy_dir = '/export/home/jrichter/data/VoiceBank/valid/noisy'
+            clean_dir = join(vb_dir, "valid/clean")
+            noisy_dir = join(vb_dir, "valid/noisy")
             
         enhanced_dir = join(base_dir, f"test_{test_set[i]}", f"train_{train_set[i]}")
         #enhanced_dir = "/export/home/jrichter/data/wsj0_chime3/test/noisy" # for the mixture
@@ -85,15 +85,17 @@ if __name__ == '__main__':
             # Add POLQA column to DataFrame
             df['polqa'] = polqa_vals
 
-        # Save DataFrame as csv file
-        if basic:
-            df.to_csv(join(enhanced_dir, "_results_basic.csv"), index=False)
-        else:
-            df.to_csv(join(enhanced_dir, "_results.csv"), index=False)
-
         # Print results
         if basic:
             print(enhanced_dir)
             print("PESQ: {:.2f} ± {:.2f}".format(*mean_std(df["pesq"].to_numpy())))
             print("ESTOI: {:.2f} ± {:.2f}".format(*mean_std(df["estoi"].to_numpy())))
             print("SI-SDR: {:.1f} ± {:.1f}".format(*mean_std(df["si_sdr"].to_numpy())))
+
+        # Save DataFrame as csv file
+        if basic:
+            df.to_csv(join(enhanced_dir, "_results_basic.csv"), index=False)
+        else:
+            df.to_csv(join(enhanced_dir, "_results.csv"), index=False)
+
+        
