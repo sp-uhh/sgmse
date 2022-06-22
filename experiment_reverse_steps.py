@@ -95,5 +95,5 @@ if __name__ == '__main__':
         data["estoi"].append(np.array(_estoi).mean())
         data["si_sdr"].append(np.array(_si_sdr).mean())    
 
-    df = pd.DataFrame(data)
-    df.to_csv(f"results_snr_{snr:.2f}.csv", index=False)
+        df = pd.DataFrame(data)
+        df.to_csv(f"results_snr_{snr:.2f}.csv", index=False)
