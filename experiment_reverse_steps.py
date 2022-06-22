@@ -48,7 +48,7 @@ if __name__ == '__main__':
     data = {"reverse_steps": [], "pesq": [], "estoi": [], "si_sdr": []}
     df = pd.DataFrame(data)
 
-    noisy_files = sorted(glob.glob('{}/*.wav'.format(noisy_dir)))[:2]
+    noisy_files = sorted(glob.glob('{}/*.wav'.format(noisy_dir)))
 
     for reverse_steps in range(args.start, args.end+1):
         print(f"reverse steps: {reverse_steps}/{args.end}")
