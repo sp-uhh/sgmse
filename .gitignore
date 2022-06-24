@@ -26,6 +26,9 @@ listen/
 enhanced/
 checkpoints/
 baselines/
+__paths__.py
+*.csv
+*.pdf
 
 # eshell files
 /eshell/history
