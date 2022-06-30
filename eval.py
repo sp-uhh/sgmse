@@ -40,7 +40,7 @@ if __name__ == '__main__':
     parser.add_argument("--corrector", type=str, choices=("ald", "none"), default="ald", 
         help="Corrector class for the PC sampler.")
     parser.add_argument("--corrector_steps", type=int, default=1, help="Number of corrector steps")
-    parser.add_argument("--snr", type=float, default=0.33, help="SNR value for annealed Langevin dynmaics.")
+    parser.add_argument("--snr", type=float, default=0.5, help="SNR value for annealed Langevin dynmaics.")
     parser.add_argument("--N", type=int, default=30, help="Number of reverse steps")
     args = parser.parse_args()
 
