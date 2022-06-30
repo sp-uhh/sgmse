@@ -16,8 +16,8 @@ from utils import pad_spec, ensure_dir
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("test", type=str, help="Specify test set.")
-    parser.add_argument("train", type=str, help="Specify train set.")
+    parser.add_argument("--test", type=str, help="Specify test set.")
+    parser.add_argument("--train", type=str, help="Specify train set.")
     parser.add_argument("--test_dir", type=str, required=True, help='Directory containing the test data')
     parser.add_argument("--ckpt", type=str,  help='Path to model checkpoint.')
     parser.add_argument("--corrector", type=str, choices=("ald", "none"), default="ald", 
