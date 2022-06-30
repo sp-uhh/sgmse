@@ -12,6 +12,8 @@ from sgmse import sampling
 from sgmse.sdes import SDERegistry
 from sgmse.backbones import BackboneRegistry
 from sgmse.util.inference import evaluate_model
+from utils import pad_spec
+import time
 
 
 class ScoreModel(pl.LightningModule):
@@ -204,7 +206,8 @@ class ScoreModel(pl.LightningModule):
                     samples.append(sample)
                     ns.append(n)
                 samples = torch.cat(samples, dim=0)
-                return samples, ns
+                #return samples, ns
+                return sample
             return batched_sampling_fn
 
     def train_dataloader(self):
@@ -233,3 +236,28 @@ class ScoreModel(pl.LightningModule):
 
     def _istft(self, spec, length=None):
         return self.data_module.istft(spec, length)
+
+    def enhance(self, y, sampler_type="pc", predictor="reverse_diffusion",
+        corrector="ald", N=30, corrector_steps=1, snr=0.33, timeit=False):
+        sr=16000
+        start = time.time()
+        T_orig = y.size(1) 
+        norm_factor = y.abs().max().item()
+        y = y / norm_factor
+        Y = torch.unsqueeze(self._forward_transform(self._stft(y.cuda())), 0)
+        Y = pad_spec(Y)
+        if sampler_type == "pc":
+            sampler = self.get_pc_sampler(predictor, corrector, Y.cuda(), N=N, 
+                corrector_steps=corrector_steps, snr=snr, intermediate=False)
+        elif sampler_type == "ode":
+            sampler = self.get_ode_sampler(Y.cuda(), N=N)
+        else:
+            print("{} is not a valid sampler type!".format(sampler_type))
+        sample = sampler()
+        x_hat = self.to_audio(sample.squeeze(), T_orig)
+        x_hat = x_hat * norm_factor
+        x_hat = x_hat.squeeze().cpu().numpy()
+        end = time.time()
+        if timeit:
+            print(f'{end-start:.2f}s / {len(x_hat)/sr}s --> RTF: {(end-start)/(len(x_hat)/sr):.2f}')
+        return x_hat

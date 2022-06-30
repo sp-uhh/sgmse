@@ -120,14 +120,12 @@ class SDE(abc.ABC):
             def rsde_parts(self, x, t, *args):
                 sde_drift, sde_diffusion = sde_fn(x, t, *args)
                 score = score_model(x, t, *args)
-                raw_dnn_output = score_model._raw_dnn_output(x, t, *args)
                 score_drift = -sde_diffusion[:, None, None, None]**2 * score * (0.5 if self.probability_flow else 1.)
                 diffusion = torch.zeros_like(sde_diffusion) if self.probability_flow else sde_diffusion
                 total_drift = sde_drift + score_drift
                 return {
                     'total_drift': total_drift, 'diffusion': diffusion, 'sde_drift': sde_drift,
                     'sde_diffusion': sde_diffusion, 'score_drift': score_drift, 'score': score,
-                    'raw_dnn_output': raw_dnn_output
                 }
 
             def discretize(self, x, t, *args):

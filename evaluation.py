@@ -79,6 +79,8 @@ if __name__ == '__main__':
             clean_files = sorted(glob('{}/*.wav'.format(clean_dir)))
             enhanced_files = sorted(glob('{}/*.wav'.format(enhanced_dir)))
 
+            assert clean_files.split("/")[-1] == enhanced_files.split("/")[-1]
+
             clean_audios = [read(clean_file)[0] for clean_file in clean_files]
             enhanced_audios = [read(enhanced_file)[0] for enhanced_file in enhanced_files]
 

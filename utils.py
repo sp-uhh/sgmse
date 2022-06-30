@@ -92,15 +92,16 @@ def ensure_dir(file_path):
         os.makedirs(directory)
 
 
-def print_metrics(x, y, x_hat, sr):
+def print_metrics(x, y, x_hat_list, labels, sr=16000):
     _si_sdr_mix = si_sdr(x, y)
     _pesq_mix = pesq(sr, x, y, 'wb')
     _estoi_mix = stoi(x, y, sr, extended=True)
-    _si_sdr = si_sdr(x, x_hat)
-    _pesq = pesq(sr, x, x_hat, 'wb')
-    _estoi = stoi(x, x_hat, sr, extended=True)
-    print(f'Mixture:  SI-SDR: {_si_sdr_mix:.2f}, PESQ: {_pesq_mix:.2f}, ESTOI: {_estoi_mix:.2f}')
-    print(f'SGMSE++:  SI-SDR: {_si_sdr:.2f}, PESQ: {_pesq:.2f}, ESTOI: {_estoi:.2f}')
+    print(f'Mixture:  PESQ: {_pesq_mix:.2f}, ESTOI: {_estoi_mix:.2f}, SI-SDR: {_si_sdr_mix:.2f}')
+    for i, x_hat in enumerate(x_hat_list):
+        _si_sdr = si_sdr(x, x_hat)
+        _pesq = pesq(sr, x, x_hat, 'wb')
+        _estoi = stoi(x, x_hat, sr, extended=True)
+        print(f'{labels[i]}: {_pesq:.2f}, ESTOI: {_estoi:.2f}, SI-SDR: {_si_sdr:.2f}')
 
 def mean_std(data):
     data = data[~np.isnan(data)]
