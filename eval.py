@@ -42,6 +42,8 @@ if __name__ == '__main__':
     parser.add_argument("--corrector_steps", type=int, default=1, help="Number of corrector steps")
     parser.add_argument("--snr", type=float, default=0.5, help="SNR value for annealed Langevin dynmaics.")
     parser.add_argument("--N", type=int, default=30, help="Number of reverse steps")
+    parser.add_argument("--atol", type=float, default=1e-5, help="Absolute tolerance for the ODE sampler")
+    parser.add_argument("--rtol", type=float, default=1e-5, help="Relative tolerance for the ODE sampler")
     args = parser.parse_args()
 
     clean_dir = join(args.test_dir, "test", "clean")
@@ -62,6 +64,8 @@ if __name__ == '__main__':
     corrector = args.corrector
     corrector_steps = args.corrector_steps
     snr = args.snr
+    atol = args.atol
+    rtol = args.rtol
 
     # Load score model 
     model = ScoreModel.load_from_checkpoint(
@@ -73,7 +77,7 @@ if __name__ == '__main__':
 
     noisy_files = sorted(glob.glob('{}/*.wav'.format(noisy_dir)))
 
-    data = {"filename": [], "pesq": [], "estoi": [], "si_sdr": [], "si_sir": [], "si_sar": []}
+    data = {"filename": [], "pesq": [], "estoi": [], "si_sdr": [], "si_sir": [], "si_sar": [], "ns": []}
     for noisy_file in tqdm(noisy_files):
         filename = noisy_file.split('/')[-1]
         
@@ -82,8 +86,8 @@ if __name__ == '__main__':
         y, _ = load(noisy_file) 
 
         # Enhance wav
-        x_hat = model.enhance(y, sampler_type=sampler_type, corrector=corrector, 
-            corrector_steps=corrector_steps, N=N, snr=snr)
+        x_hat, ns = model.enhance(y, sampler_type=sampler_type, corrector=corrector, 
+            corrector_steps=corrector_steps, N=N, snr=snr, atol=atol, rtol=rtol)
 
         # Convert to numpy
         x = x.squeeze().cpu().numpy()
@@ -100,6 +104,7 @@ if __name__ == '__main__':
         data["si_sdr"].append(energy_ratios(x_hat, x, n)[0])
         data["si_sir"].append(energy_ratios(x_hat, x, n)[1])
         data["si_sar"].append(energy_ratios(x_hat, x, n)[2])
+        data["ns"].append(ns)
 
     # Save results as DataFrame    
     df = pd.DataFrame(data)
@@ -123,3 +128,6 @@ if __name__ == '__main__':
         file.write("corrector_steps: {}\n".format(corrector_steps))
         file.write("N: {}\n".format(N))
         file.write("snr: {}\n".format(snr))
+        if sampler_type == "ode":
+            file.write("atol: {}\n".format(atol))
+            file.write("rtol: {}\n".format(rtol))

@@ -195,7 +195,7 @@ class ScoreModel(pl.LightningModule):
                 return samples, ns
             return batched_sampling_fn
 
-    def get_ode_sampler(self, y, N=None, minibatch=1, **kwargs):
+    def get_ode_sampler(self, y, N=None, minibatch=None, **kwargs):
         N = self.sde.N if N is None else N
         sde = self.sde.copy()
         sde.N = N
@@ -214,8 +214,7 @@ class ScoreModel(pl.LightningModule):
                     samples.append(sample)
                     ns.append(n)
                 samples = torch.cat(samples, dim=0)
-                #return samples, ns
-                return sample
+                return sample, ns
             return batched_sampling_fn
 
     def train_dataloader(self):
@@ -246,7 +245,8 @@ class ScoreModel(pl.LightningModule):
         return self.data_module.istft(spec, length)
 
     def enhance(self, y, sampler_type="pc", predictor="reverse_diffusion",
-        corrector="ald", N=30, corrector_steps=1, snr=0.33, timeit=False):
+        corrector="ald", N=30, corrector_steps=1, snr=0.33, timeit=False,
+        **kwargs):
         sr=16000
         start = time.time()
         T_orig = y.size(1) 
@@ -256,16 +256,17 @@ class ScoreModel(pl.LightningModule):
         Y = pad_spec(Y)
         if sampler_type == "pc":
             sampler = self.get_pc_sampler(predictor, corrector, Y.cuda(), N=N, 
-                corrector_steps=corrector_steps, snr=snr, intermediate=False)
+                corrector_steps=corrector_steps, snr=snr, intermediate=False,
+                **kwargs)
         elif sampler_type == "ode":
-            sampler = self.get_ode_sampler(Y.cuda(), N=N)
+            sampler = self.get_ode_sampler(Y.cuda(), N=N, **kwargs)
         else:
             print("{} is not a valid sampler type!".format(sampler_type))
-        sample = sampler()
+        sample, ns = sampler()
         x_hat = self.to_audio(sample.squeeze(), T_orig)
         x_hat = x_hat * norm_factor
         x_hat = x_hat.squeeze().cpu().numpy()
         end = time.time()
         if timeit:
             print(f'{end-start:.2f}s / {len(x_hat)/sr}s --> RTF: {(end-start)/(len(x_hat)/sr):.2f}')
-        return x_hat
+        return x_hat, ns

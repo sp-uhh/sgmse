@@ -93,7 +93,8 @@ def get_pc_sampler(
                 xt, xt_mean = corrector.update_fn(xt, vec_t, y)
                 xt, xt_mean = predictor.update_fn(xt, vec_t, y)
             x_result = xt_mean if denoise else xt
-            return x_result
+            ns = sde.N * (corrector.n_steps + 1)
+            return x_result, ns
 
     if intermediate:
         return pc_sampler_intermediate
@@ -103,8 +104,8 @@ def get_pc_sampler(
 
 def get_ode_sampler(
     sde, score_fn, y, inverse_scaler=None,
-    denoise=False, rtol=1e-5, atol=1e-5,
-    method='RK45', eps=3e-2, device='cuda'
+    denoise=True, rtol=1e-5, atol=1e-5,
+    method='RK45', eps=3e-2, device='cuda', **kwargs
 ):
     """Probability flow ODE sampler with the black-box ODE solver.
 
@@ -136,7 +137,7 @@ def get_ode_sampler(
         """Get the drift function of the reverse-time SDE."""
         return rsde.sde(x, t, y)[0]
 
-    def ode_sampler(z=None):
+    def ode_sampler(z=None, **kwargs):
         """The probability flow ODE sampler with black-box ODE solver.
 
         Args:
@@ -158,7 +159,7 @@ def get_ode_sampler(
             # Black-box ODE solver for the probability flow ODE
             solution = integrate.solve_ivp(
                 ode_func, (sde.T, eps), to_flattened_numpy(x),
-                rtol=rtol, atol=atol, method=method
+                rtol=rtol, atol=atol, method=method, **kwargs
             )
             nfe = solution.nfev
             x = torch.tensor(solution.y[:, -1]).reshape(y.shape).to(device).type(torch.complex64)
