@@ -19,7 +19,8 @@ import time
 class ScoreModel(pl.LightningModule):
     def __init__(self, backbone, sde, lr=1e-4, ema_decay=0.999, t_eps=3e-2, 
             time_cond = "t", transform='none', input_y= True, nolog=False, 
-            num_eval_files=0, loss_type='mse', data_module_cls=None, **kwargs):
+            eval_start=0, num_eval_files=0, loss_type='mse', data_module_cls=None, 
+            **kwargs):
         """
         Create a new ScoreModel.
 
@@ -50,6 +51,7 @@ class ScoreModel(pl.LightningModule):
         self._error_loading_ema = False
         self.t_eps = t_eps
         self.loss_type = loss_type
+        self.eval_start = eval_start
         self.num_eval_files = num_eval_files
         self.time_cond = time_cond
 
@@ -63,6 +65,7 @@ class ScoreModel(pl.LightningModule):
         parser.add_argument("--lr", type=float, default=1e-4, help="The learning rate")
         parser.add_argument("--ema_decay", type=float, default=0.999, help="The parameter EMA decay constant (0.999 by default)")
         parser.add_argument("--t_eps", type=float, default=0.03, help="The minimum time (3e-2 by default)")
+        parser.add_argument("--eval_start", type=int, default=0, help="Determines the epoch when to start with evalution during training.")
         parser.add_argument("--num_eval_files", type=int, default=0, help="Number of files for speech enhancement performance evaluation during training.")
         parser.add_argument("--input_y", dest='input_y', action="store_true", help="Provide y to the score model")
         parser.add_argument("--no_input_y", dest='input_y', action="store_false", help="Don't provide y to the score model")
@@ -139,11 +142,16 @@ class ScoreModel(pl.LightningModule):
         loss = self._step(batch, batch_idx)
         self.log('valid_loss', loss, on_step=False, on_epoch=True)
         # Evaluate speech enhancement performance
-        if batch_idx == 0 and self.num_eval_files != 0:
+        if batch_idx == 0 and self.num_eval_files != 0 and self.current_epoch >= self.eval_start:
             pesq, si_sdr, estoi = evaluate_model(self, self.num_eval_files)
             self.log('pesq', pesq, on_step=False, on_epoch=True)
             self.log('si_sdr', si_sdr, on_step=False, on_epoch=True)
             self.log('estoi', estoi, on_step=False, on_epoch=True)
+        else:
+            self.log('pesq', 0.0, on_step=False, on_epoch=True)
+            self.log('si_sdr', 0.0, on_step=False, on_epoch=True)
+            self.log('estoi', 0.0, on_step=False, on_epoch=True)
+
         return loss
 
     def forward(self, x, t, y):

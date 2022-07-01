@@ -86,7 +86,7 @@ class Specs(Dataset):
     def __len__(self):
         if self.dummy:
             # for debugging shrink the data set size
-            return int(len(self.clean_files)/100)
+            return int(len(self.clean_files)/200)
         else:
             return len(self.clean_files)
 
