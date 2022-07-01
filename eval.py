@@ -37,6 +37,8 @@ if __name__ == '__main__':
     parser.add_argument("--ckpt", type=str,  help='Path to model checkpoint.')
     parser.add_argument("--sampler_type", type=str, choices=("pc", "ode"), default="pc", 
         help="Specify the sampler type")
+    parser.add_argument("--predictor", type=str, choices=("reverse_diffusion", "euler_maruyama", "none"), 
+        default="reverse_diffusion", help="Predictor class for the PC sampler.")
     parser.add_argument("--corrector", type=str, choices=("ald", "none"), default="ald", 
         help="Corrector class for the PC sampler.")
     parser.add_argument("--corrector_steps", type=int, default=1, help="Number of corrector steps")
@@ -50,7 +52,6 @@ if __name__ == '__main__':
     noisy_dir = join(args.test_dir, "test", "noisy")
 
     checkpoint_file = args.ckpt
-    corrector_cls = args.corrector
 
     target_dir = "/export/home/jrichter/repos/sgmse/enhanced/test_{}/train_{}/".format(
         args.test, args.train) 
@@ -61,6 +62,7 @@ if __name__ == '__main__':
     sr = 16000
     sampler_type = args.sampler_type
     N = args.N
+    predictor = args.predictor
     corrector = args.corrector
     corrector_steps = args.corrector_steps
     snr = args.snr
@@ -86,8 +88,9 @@ if __name__ == '__main__':
         y, _ = load(noisy_file) 
 
         # Enhance wav
-        x_hat, ns = model.enhance(y, sampler_type=sampler_type, corrector=corrector, 
-            corrector_steps=corrector_steps, N=N, snr=snr, atol=atol, rtol=rtol)
+        x_hat, ns = model.enhance(y, sampler_type=sampler_type, predictor=predictor,
+            corrector=corrector, corrector_steps=corrector_steps, N=N, snr=snr, 
+            atol=atol, rtol=rtol)
 
         # Convert to numpy
         x = x.squeeze().cpu().numpy()
@@ -118,12 +121,14 @@ if __name__ == '__main__':
         file.write("SI-SDR: {} \n".format(print_mean_std(data["si_sdr"])))
         file.write("SI-SIR: {} \n".format(print_mean_std(data["si_sir"])))
         file.write("SI-SAR: {} \n".format(print_mean_std(data["si_sar"])))
+        file.write("ns: {} \n".format(print_mean_std(data["ns"])))
 
     # Save settings
     text_file = join(target_dir, "_settings.txt")
     with open(text_file, 'w') as file:
         file.write("checkpoint file: {}\n".format(checkpoint_file))
         file.write("sampler_type: {}\n".format(sampler_type))
+        file.write("predictor: {}\n".format(predictor))
         file.write("corrector: {}\n".format(corrector))
         file.write("corrector_steps: {}\n".format(corrector_steps))
         file.write("N: {}\n".format(N))

@@ -25,20 +25,6 @@ def from_flattened_numpy(x, shape):
     return torch.from_numpy(x.reshape(shape))
 
 
-def _id(x):
-    return x
-
-
-def _power(x):
-    return torch.sum(x.abs()**2)
-
-
-_debug_keys = (
-    'total_drift', 'diffusion', 'sde_drift', 'sde_diffusion', 'score_drift', 'score',
-    't', 'xt', 'xt_mean', 'mse_x', 'mse_y', 'xT', 'x_final', 'raw_dnn_output'
-)
-
-
 def get_pc_sampler(
     predictor_name, corrector_name, sde, score_fn, y,
     denoise=True, eps=3e-2, snr=0.1, corrector_steps=1, probability_flow: bool = False,
