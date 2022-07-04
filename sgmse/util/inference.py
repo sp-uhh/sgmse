@@ -45,7 +45,7 @@ def evaluate_model(model, num_eval_files):
         sampler = model.get_pc_sampler(
             'reverse_diffusion', 'ald', Y.cuda(), N=N, 
             corrector_steps=corrector_steps, snr=snr)
-        sample = sampler()
+        sample, _ = sampler()
 
         x_hat = model.to_audio(sample.squeeze(), T_orig)
         x_hat = x_hat * norm_factor
