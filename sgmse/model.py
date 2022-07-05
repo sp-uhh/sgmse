@@ -147,7 +147,7 @@ class ScoreModel(pl.LightningModule):
             self.log('pesq', pesq, on_step=False, on_epoch=True)
             self.log('si_sdr', si_sdr, on_step=False, on_epoch=True)
             self.log('estoi', estoi, on_step=False, on_epoch=True)
-        else:
+        elif batch_idx == 0 and self.num_eval_files != 0 and self.current_epoch < self.eval_start:
             self.log('pesq', 0.0, on_step=False, on_epoch=True)
             self.log('si_sdr', 0.0, on_step=False, on_epoch=True)
             self.log('estoi', 0.0, on_step=False, on_epoch=True)
