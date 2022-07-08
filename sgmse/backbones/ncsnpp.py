@@ -35,11 +35,46 @@ get_normalization = normalization.get_normalization
 default_initializer = layers.default_init
 
 
+def get_fir_kernel(name):
+    if name == 'song':
+        return [1, 3, 3, 1]
+    elif name == 'order8_mcclellan_06':
+        return [[ 8.40394633e-05,  6.72315706e-04,  2.35310497e-03,
+                  4.70620994e-03,  5.88276243e-03,  4.70620994e-03,
+                  2.35310497e-03,  6.72315706e-04,  8.40394633e-05],
+                [ 6.72315706e-04,  2.05039386e-03, -1.14395097e-03,
+                  -1.22722973e-02, -1.95005364e-02, -1.22722973e-02,
+                  -1.14395097e-03,  2.05039386e-03,  6.72315706e-04],
+                [ 2.35310497e-03, -1.14395097e-03, -1.73361706e-02,
+                  -2.13994441e-02, -1.51206589e-02, -2.13994441e-02,
+                  -1.73361706e-02, -1.14395097e-03,  2.35310497e-03],
+                [ 4.70620994e-03, -1.22722973e-02, -2.13994441e-02,
+                  8.32280939e-02,  1.75298062e-01,  8.32280939e-02,
+                  -2.13994441e-02, -1.22722973e-02,  4.70620994e-03],
+                [ 5.88276243e-03, -1.95005364e-02, -1.51206589e-02,
+                  1.75298062e-01,  3.31070843e-01,  1.75298062e-01,
+                  -1.51206589e-02, -1.95005364e-02,  5.88276243e-03],
+                [ 4.70620994e-03, -1.22722973e-02, -2.13994441e-02,
+                  8.32280939e-02,  1.75298062e-01,  8.32280939e-02,
+                  -2.13994441e-02, -1.22722973e-02,  4.70620994e-03],
+                [ 2.35310497e-03, -1.14395097e-03, -1.73361706e-02,
+                  -2.13994441e-02, -1.51206589e-02, -2.13994441e-02,
+                  -1.73361706e-02, -1.14395097e-03,  2.35310497e-03],
+                [ 6.72315706e-04,  2.05039386e-03, -1.14395097e-03,
+                  -1.22722973e-02, -1.95005364e-02, -1.22722973e-02,
+                  -1.14395097e-03,  2.05039386e-03,  6.72315706e-04],
+                [ 8.40394633e-05,  6.72315706e-04,  2.35310497e-03,
+                  4.70620994e-03,  5.88276243e-03,  4.70620994e-03,
+                  2.35310497e-03,  6.72315706e-04,  8.40394633e-05]]
+    else:
+        raise NotImplementedError(f"unknown FIR kernel: {name}")
+
+
 @BackboneRegistry.register("ncsnpp")
 class NCSNpp(nn.Module):
     """NCSN++ model"""
 
-    def __init__(self, 
+    def __init__(self,
         sigma_max = 348,
         scale_by_sigma = True,
         ema_rate = 0.999,
@@ -52,7 +87,7 @@ class NCSNpp(nn.Module):
         resamp_with_conv = True,
         conditional = True,
         fir = True,
-        fir_kernel = [1, 3, 3, 1],
+        fir_kernel = 'song',
         skip_rescale = True,
         resblock_type = 'biggan',
         progressive = 'output_skip',
@@ -85,7 +120,7 @@ class NCSNpp(nn.Module):
         self.centered = centered
         self.scale_by_sigma = scale_by_sigma
         fir = fir
-        fir_kernel = fir_kernel
+        fir_kernel = get_fir_kernel(fir_kernel)
         self.skip_rescale = skip_rescale = skip_rescale
         self.resblock_type = resblock_type = resblock_type.lower()
         self.progressive = progressive = progressive.lower()
@@ -125,16 +160,16 @@ class NCSNpp(nn.Module):
             modules[-1].weight.data = default_initializer()(modules[-1].weight.shape)
             nn.init.zeros_(modules[-1].bias)
 
-        AttnBlock = functools.partial(layerspp.AttnBlockpp, 
+        AttnBlock = functools.partial(layerspp.AttnBlockpp,
             init_scale=init_scale, skip_rescale=skip_rescale)
 
-        Upsample = functools.partial(layerspp.Upsample, 
+        Upsample = functools.partial(layerspp.Upsample,
             with_conv=resamp_with_conv, fir=fir, fir_kernel=fir_kernel)
 
         if progressive == 'output_skip':
             self.pyramid_upsample = layerspp.Upsample(fir=fir, fir_kernel=fir_kernel, with_conv=False)
         elif progressive == 'residual':
-            pyramid_upsample = functools.partial(layerspp.Upsample, fir=fir, 
+            pyramid_upsample = functools.partial(layerspp.Upsample, fir=fir,
                 fir_kernel=fir_kernel, with_conv=True)
 
         Downsample = functools.partial(layerspp.Downsample, with_conv=resamp_with_conv, fir=fir, fir_kernel=fir_kernel)
@@ -146,13 +181,13 @@ class NCSNpp(nn.Module):
                 fir=fir, fir_kernel=fir_kernel, with_conv=True)
 
         if resblock_type == 'ddpm':
-            ResnetBlock = functools.partial(ResnetBlockDDPM, act=act, 
-                dropout=dropout, init_scale=init_scale, 
+            ResnetBlock = functools.partial(ResnetBlockDDPM, act=act,
+                dropout=dropout, init_scale=init_scale,
                 skip_rescale=skip_rescale, temb_dim=nf * 4)
 
         elif resblock_type == 'biggan':
             ResnetBlock = functools.partial(ResnetBlockBigGAN, act=act,
-                dropout=dropout, fir=fir, fir_kernel=fir_kernel, 
+                dropout=dropout, fir=fir, fir_kernel=fir_kernel,
                 init_scale=init_scale, skip_rescale=skip_rescale, temb_dim=nf * 4)
 
         else:
@@ -215,7 +250,7 @@ class NCSNpp(nn.Module):
             if progressive != 'none':
                 if i_level == num_resolutions - 1:
                     if progressive == 'output_skip':
-                        modules.append(nn.GroupNorm(num_groups=min(in_ch // 4, 32), 
+                        modules.append(nn.GroupNorm(num_groups=min(in_ch // 4, 32),
                             num_channels=in_ch, eps=1e-6))
                         modules.append(conv3x3(in_ch, channels, init_scale=init_scale))
                         pyramid_ch = channels
@@ -260,6 +295,7 @@ class NCSNpp(nn.Module):
         parser.add_argument("--scale_by_sigma", dest="scale_by_sigma", action="store_true", help="Scale model output by std.")
         parser.add_argument("--no-scale_by_sigma", dest="scale_by_sigma", action="store_false", help="Not scale model output by std.")
         parser.set_defaults(scale_by_sigma=True)
+        parser.add_argument("--fir-kernel", choices=["song", "order8_mcclellan_06"], default="song")
         return parser
 
     def forward(self, x, time_cond):
@@ -304,7 +340,7 @@ class NCSNpp(nn.Module):
             input_pyramid = x
 
         # Input layer: Conv2d: 4ch -> 128ch
-        hs = [modules[m_idx](x)]  
+        hs = [modules[m_idx](x)]
         m_idx += 1
 
         # Down path in U-Net
@@ -320,7 +356,7 @@ class NCSNpp(nn.Module):
                 hs.append(h)
 
             # Downsampling
-            if i_level != self.num_resolutions - 1:  
+            if i_level != self.num_resolutions - 1:
                 if self.resblock_type == 'ddpm':
                     h = modules[m_idx](hs[-1])
                     m_idx += 1
@@ -346,7 +382,7 @@ class NCSNpp(nn.Module):
         h = hs[-1] # actualy equal to: h = h
         h = modules[m_idx](h, temb)  # ResNet block
         m_idx += 1
-        h = modules[m_idx](h)  # Attention block 
+        h = modules[m_idx](h)  # Attention block
         m_idx += 1
         h = modules[m_idx](h, temb)  # ResNet block
         m_idx += 1
@@ -381,7 +417,7 @@ class NCSNpp(nn.Module):
                 else:
                     if self.progressive == 'output_skip':
                         pyramid = self.pyramid_upsample(pyramid)  # Upsample
-                        pyramid_h = self.act(modules[m_idx](h))  # GroupNorm 
+                        pyramid_h = self.act(modules[m_idx](h))  # GroupNorm
                         m_idx += 1
                         pyramid_h = modules[m_idx](pyramid_h)
                         m_idx += 1
