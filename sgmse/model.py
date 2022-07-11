@@ -19,8 +19,8 @@ import time
 class ScoreModel(pl.LightningModule):
     def __init__(self, backbone, sde, lr=1e-4, ema_decay=0.999, t_eps=3e-2, 
             time_cond = "t", transform='none', input_y= True, nolog=False, 
-            eval_start=0, num_eval_files=0, loss_type='mse', data_module_cls=None, 
-            **kwargs):
+            eval_start=0, num_eval_files=0, loss_type='mse', data_module_cls=None,
+            minus=True, **kwargs):
         """
         Create a new ScoreModel.
 
@@ -54,6 +54,7 @@ class ScoreModel(pl.LightningModule):
         self.eval_start = eval_start
         self.num_eval_files = num_eval_files
         self.time_cond = time_cond
+        self.minus = minus
 
         self.save_hyperparameters(ignore=['nolog'])
         self.data_module = data_module_cls(**kwargs, gpu=kwargs.get('gpus', 0) > 0)
@@ -72,6 +73,8 @@ class ScoreModel(pl.LightningModule):
         parser.set_defaults(input_y=True)
         parser.add_argument("--loss_type", type=str, default="mse", choices=("mse", "mae", "gaussian_entropy"), help="The type of loss function to use.")
         parser.add_argument("--time_cond", type=str, default="t", choices=("t", "std"), help="The time conditioner input to the DNN.")
+        parser.add_argument("--no_minus", dest="minus", action="store_false", help="Set a minus before DNN return.")
+        parser.set_defaults(minus=True)
         return parser
 
     def configure_optimizers(self):
@@ -166,7 +169,10 @@ class ScoreModel(pl.LightningModule):
         else:
             dnn_input = x
         # not sure if the minus and scaling is important here - taken from Song for VPSDE case
-        score = -self.dnn(dnn_input, time_cond)
+        if self.minus:
+            score = -self.dnn(dnn_input, time_cond)
+        else:
+            score = self.dnn(dnn_input, time_cond)  
         return score
 
     def to(self, *args, **kwargs):

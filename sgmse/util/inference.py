@@ -19,8 +19,10 @@ def evaluate_model(model, num_eval_files):
     noisy_files = model.data_module.valid_set.noisy_files
     
     # Select test files uniformly accros validation files
-    clean_files = clean_files[:num_eval_files]
-    noisy_files = noisy_files[:num_eval_files]
+    total_num_files = len(clean_files)
+    indices = torch.linspace(0, total_num_files-1, num_eval_files, dtype=torch.int)
+    clean_files = list(clean_files[i] for i in indices)
+    noisy_files = list(noisy_files[i] for i in indices)
 
     _pesq = 0
     _si_sdr = 0
