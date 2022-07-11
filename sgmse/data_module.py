@@ -20,11 +20,11 @@ def get_window(window_type, window_length):
 
 
 class Specs(Dataset):
-    def __init__(self, data_dir, subset, dummy, shuffle_spec, num_frames, 
-            format='default', normalize="noisy", spec_transform=None, 
+    def __init__(self, data_dir, subset, dummy, shuffle_spec, num_frames,
+            format='default', normalize="noisy", spec_transform=None,
             stft_kwargs=None, **ignored_kwargs):
 
-        # Read file paths according to file naming format.  
+        # Read file paths according to file naming format.
         if format == "default":
             self.clean_files = sorted(glob(join(data_dir, subset) + '/clean/*.wav'))
             self.noisy_files = sorted(glob(join(data_dir, subset) + '/noisy/*.wav'))
@@ -48,7 +48,7 @@ class Specs(Dataset):
     def __getitem__(self, i):
         x, _ = load(self.clean_files[i])
         y, _ = load(self.noisy_files[i])
-        
+
         # formula applies for center=True
         target_len = (self.num_frames - 1) * self.hop_length
         current_len = x.size(-1)
@@ -94,7 +94,7 @@ class Specs(Dataset):
 class SpecsDataModule(pl.LightningDataModule):
     def __init__(
         self, base_dir, format='default', batch_size=32,
-        n_fft=510, hop_length=128, num_frames=256, window='sqrthann',
+        n_fft=510, hop_length=128, num_frames=256, window='hann',
         num_workers=4, dummy=False, spec_factor=0.33, spec_abs_exponent=0.5,
         gpu=True, normalize='noisy', transform_type="exponent", **kwargs
     ):
@@ -117,20 +117,20 @@ class SpecsDataModule(pl.LightningDataModule):
         self.kwargs = kwargs
 
     def setup(self, stage=None):
-        specs_kwargs = dict(stft_kwargs=self.stft_kwargs, 
-                            num_frames=self.num_frames, 
-                            spec_transform=self.spec_fwd, **self.stft_kwargs, 
+        specs_kwargs = dict(stft_kwargs=self.stft_kwargs,
+                            num_frames=self.num_frames,
+                            spec_transform=self.spec_fwd, **self.stft_kwargs,
                             **self.kwargs)
         if stage == 'fit' or stage is None:
-            self.train_set = Specs(data_dir=self.base_dir, subset='train', 
-                dummy=self.dummy, shuffle_spec=True, format=self.format, 
+            self.train_set = Specs(data_dir=self.base_dir, subset='train',
+                dummy=self.dummy, shuffle_spec=True, format=self.format,
                 normalize=self.normalize, **specs_kwargs)
-            self.valid_set = Specs(data_dir=self.base_dir, subset='valid', 
-                dummy=self.dummy, shuffle_spec=False, format=self.format, 
+            self.valid_set = Specs(data_dir=self.base_dir, subset='valid',
+                dummy=self.dummy, shuffle_spec=False, format=self.format,
                 normalize=self.normalize, **specs_kwargs)
         if stage == 'test' or stage is None:
-            self.test_set = Specs(data_dir=self.base_dir, subset='test', 
-                dummy=self.dummy, shuffle_spec=False, format=self.format, 
+            self.test_set = Specs(data_dir=self.base_dir, subset='test',
+                dummy=self.dummy, shuffle_spec=False, format=self.format,
                 normalize=self.normalize, **specs_kwargs)
 
     def spec_fwd(self, spec):
@@ -207,7 +207,7 @@ class SpecsDataModule(pl.LightningDataModule):
         parser.add_argument("--num_frames", type=int, default=256,
             help="Number of frames for the dataset. 256 by default.")
         parser.add_argument("--window", type=str, choices=("sqrthann", "hann"), default="hann",
-            help="The window function to use for the STFT. 'sqrthann' by default.")
+            help="The window function to use for the STFT. 'hann' by default.")
         parser.add_argument("--num_workers", type=int, default=4,
             help="Number of workers to use for DataLoaders. 4 by default.")
         parser.add_argument("--dummy", action="store_true",
