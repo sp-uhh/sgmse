@@ -40,7 +40,7 @@ class ScoreModel(pl.LightningModule):
             if ch is not None and ch != 2:
                 warnings.warn("Overriding input_channels from {ch} to 2 since 'input_y' is set")
             kwargs.update(input_channels=2)
-        self.dnn = dnn_cls(**kwargs)
+        self.dnn = dnn_cls(**kwargs, input_y=input_y)
         # Initialize SDE
         sde_cls = SDERegistry.get_by_name(sde)
         self.sde = sde_cls(**kwargs)

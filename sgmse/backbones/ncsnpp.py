@@ -64,9 +64,9 @@ class NCSNpp(nn.Module):
         conv_size = 3,
         image_size = 256,
         embedding_type = 'fourier',
-        num_channels = 4,
         dropout = .0,
         centered = False,
+        input_y = True,
         **kwargs):
         super().__init__()
         self.act = act = get_act(nonlinearity)
@@ -97,6 +97,12 @@ class NCSNpp(nn.Module):
         assert embedding_type in ['fourier', 'positional']
         combine_method = progressive_combine.lower()
         combiner = functools.partial(Combine, method=combine_method)
+        self.input_y = input_y
+
+        if input_y:
+            num_channels = 4
+        else:
+            num_channels = 2
 
         self.output_layer = nn.Conv2d(num_channels, 2, 1)
 
@@ -268,8 +274,11 @@ class NCSNpp(nn.Module):
         m_idx = 0
 
         # Convert real and imaginary parts into channel dimensions
-        x = torch.cat((x[:,[0],:,:].real, x[:,[0],:,:].imag,
-                x[:,[1],:,:].real, x[:,[1],:,:].imag), dim=1)
+        if self.input_y:
+            x = torch.cat((x[:,[0],:,:].real, x[:,[0],:,:].imag,
+                    x[:,[1],:,:].real, x[:,[1],:,:].imag), dim=1)
+        else:
+            x = torch.cat((x[:,[0],:,:].real, x[:,[0],:,:].imag), dim=1)
 
         if self.embedding_type == 'fourier':
             # Gaussian Fourier features embeddings.
