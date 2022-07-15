@@ -71,7 +71,7 @@ if __name__ == '__main__':
         sampler = model.get_pc_sampler(
             'reverse_diffusion', corrector_cls, Y.cuda(), N=N, 
             corrector_steps=corrector_steps, snr=snr)
-        sample = sampler()
+        sample, _ = sampler()
         
         # Backward transform in time domain
         x_hat = model.to_audio(sample.squeeze(), T_orig)
