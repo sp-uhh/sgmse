@@ -25,11 +25,14 @@ if __name__ == '__main__':
     parser.add_argument("--corrector_steps", type=int, default=1, help="Number of corrector steps")
     parser.add_argument("--snr", type=float, default=0.33, help="SNR value for annealed Langevin dynmaics.")
     parser.add_argument("--N", type=int, default=30, help="Number of reverse steps")
+    parser.add_argument("--no_cond_prior", dest="cond_prior", action="store_false", help="Sample from unconditional prior")
+    parser.set_defaults(cond_prior=True)
     args = parser.parse_args()
 
     noisy_dir = args.test_dir
     checkpoint_file = args.ckpt
     corrector_cls = args.corrector
+    conditional_prior = args.cond_prior
 
     target_dir = "/export/home/jrichter/repos/sgmse/enhanced/test_{}/train_{}/".format(
         args.test, args.train) 
@@ -70,7 +73,7 @@ if __name__ == '__main__':
         # Reverse sampling
         sampler = model.get_pc_sampler(
             'reverse_diffusion', corrector_cls, Y.cuda(), N=N, 
-            corrector_steps=corrector_steps, snr=snr)
+            corrector_steps=corrector_steps, snr=snr, conditional_prior=conditional_prior)
         sample, _ = sampler()
         
         # Backward transform in time domain

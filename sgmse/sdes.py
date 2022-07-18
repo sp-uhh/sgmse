@@ -209,11 +209,15 @@ class OUVESDE(SDE):
     def marginal_prob(self, x0, t, y):
         return self._mean(x0, t, y), self._std(t)
 
-    def prior_sampling(self, shape, y):
+    def prior_sampling(self, shape, y, conditional_prior=True):
         if shape != y.shape:
             warnings.warn(f"Target shape {shape} does not match shape of y {y.shape}! Ignoring target shape.")
         std = self._std(torch.ones((y.shape[0],), device=y.device))
-        return y + torch.randn_like(y) * std[:, None, None, None]
+        if conditional_prior:
+            x_T = y + torch.randn_like(y) * std[:, None, None, None]
+        else:
+            x_T = torch.randn_like(y) * std[:, None, None, None]
+        return x_T
 
     def prior_logp(self, z):
         raise NotImplementedError("prior_logp for OU SDE not yet implemented!")
@@ -284,11 +288,15 @@ class OUVPSDE(SDE):
     def marginal_prob(self, x0, t, y):
         return self._mean(x0, t, y), self._std(t)
 
-    def prior_sampling(self, shape, y):
+    def prior_sampling(self, shape, y, conditional_prior=True):
         if shape != y.shape:
             warnings.warn(f"Target shape {shape} does not match shape of y {y.shape}! Ignoring target shape.")
         std = self._std(torch.ones((y.shape[0],), device=y.device))
-        return y + torch.randn_like(y) * std[:, None, None, None]
+        if conditional_prior:
+            x_T = y + torch.randn_like(y) * std[:, None, None, None]
+        else:
+            x_T = torch.randn_like(y) * std[:, None, None, None]
+        return x_T
 
     def prior_logp(self, z):
         raise NotImplementedError("prior_logp for OU SDE not yet implemented!")
