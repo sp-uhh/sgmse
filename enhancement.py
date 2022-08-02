@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 from sgmse.data_module import SpecsDataModule
 from sgmse.sdes import OUVESDE
 from sgmse.model import ScoreModel
+from __paths__ import wsj0_dir, vb_dir
 
 from utils import pad_spec, ensure_dir
 
