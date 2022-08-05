@@ -65,7 +65,7 @@ if __name__ == '__main__':
      # Set up W&B logger configuration
      logger = None
      if not args.nolog:
-          logger = WandbLogger(project="sgmse", entity='richter', log_model=True, save_dir="logs")
+          logger = WandbLogger(project="sgmse", log_model=True, save_dir="logs")
           logger.experiment.log_code(".")
 
      #early_stopping_pesq = EarlyStopping(monitor="pesq", mode="max", patience=5)
