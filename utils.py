@@ -108,3 +108,14 @@ def mean_std(data):
     mean = np.mean(data)
     std = np.std(data)
     return mean, std
+
+def print_mean_std(data, decimal=2):
+    data = np.array(data)
+    data = data[~np.isnan(data)]
+    mean = np.mean(data)
+    std = np.std(data)
+    if decimal == 2:
+        string = f'{mean:.2f} ± {std:.2f}'
+    elif decimal == 1:
+        string = f'{mean:.1f} ± {std:.1f}'
+    return string

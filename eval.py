@@ -16,18 +16,8 @@ from sgmse.model import ScoreModel
 from pesq import pesq
 from pystoi import stoi
 
-from utils import energy_ratios, ensure_dir
+from utils import energy_ratios, ensure_dir, print_mean_std
 
-def print_mean_std(data, decimal=2):
-    data = np.array(data)
-    data = data[~np.isnan(data)]
-    mean = np.mean(data)
-    std = np.std(data)
-    if decimal == 2:
-        string = f'{mean:.2f} ± {std:.2f}'
-    elif decimal == 1:
-        string = f'{mean:.1f} ± {std:.1f}'
-    return string
 
 if __name__ == '__main__':
     parser = ArgumentParser()

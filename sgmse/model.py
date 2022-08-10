@@ -168,11 +168,8 @@ class ScoreModel(pl.LightningModule):
             dnn_input = torch.cat([x, y], dim=1)
         else:
             dnn_input = x
-        # not sure if the minus and scaling is important here - taken from Song for VPSDE case
-        if self.minus:
-            score = -self.dnn(dnn_input, time_cond)
-        else:
-            score = self.dnn(dnn_input, time_cond)  
+        # the minus is most likely unimportant here - taken from Song's repo
+        score = -self.dnn(dnn_input, time_cond)
         return score
 
     def to(self, *args, **kwargs):
@@ -251,7 +248,7 @@ class ScoreModel(pl.LightningModule):
         return self.data_module.istft(spec, length)
 
     def enhance(self, y, sampler_type="pc", predictor="reverse_diffusion",
-        corrector="ald", N=30, corrector_steps=1, snr=0.33, timeit=False,
+        corrector="ald", N=30, corrector_steps=1, snr=0.5, timeit=False,
         **kwargs):
         sr=16000
         start = time.time()
@@ -268,11 +265,13 @@ class ScoreModel(pl.LightningModule):
             sampler = self.get_ode_sampler(Y.cuda(), N=N, **kwargs)
         else:
             print("{} is not a valid sampler type!".format(sampler_type))
-        sample, ns = sampler()
+        sample, nfe = sampler()
         x_hat = self.to_audio(sample.squeeze(), T_orig)
         x_hat = x_hat * norm_factor
         x_hat = x_hat.squeeze().cpu().numpy()
         end = time.time()
         if timeit:
-            print(f'{end-start:.2f}s / {len(x_hat)/sr}s --> RTF: {(end-start)/(len(x_hat)/sr):.2f}')
-        return x_hat, ns
+            rtf = (end-start)/(len(x_hat)/sr)
+            return x_hat, nfe, rtf
+        else:
+            return x_hat

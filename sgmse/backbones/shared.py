@@ -3,7 +3,6 @@ import numpy as np
 
 import torch
 import torch.nn as nn
-# from asteroid import complex_nn
 
 from sgmse.util.registry import Registry
 
@@ -88,33 +87,37 @@ class FeatureMapDense(nn.Module):
         return self.dense(x)[..., None, None]
 
 
-# class ArgsComplexMultiplicationWrapper(nn.Module):
-#     """Adapted from `asteroid`'s `complex_nn.py`, allowing args/kwargs to be passed through forward().
-
-#     Make a complex-valued module `F` from a real-valued module `f` by applying
-#     complex multiplication rules:
-
-#     F(a + i b) = f1(a) - f1(b) + i (f2(b) + f2(a))
-
-#     where `f1`, `f2` are instances of `f` that do *not* share weights.
-
-#     Args:
-#         module_cls (callable): A class or function that returns a Torch module/functional.
-#             Constructor of `f` in the formula above.  Called 2x with `*args`, `**kwargs`,
-#             to construct the real and imaginary component modules.
-#     """
-
-#     def __init__(self, module_cls, *args, **kwargs):
-#         super().__init__()
-#         self.re_module = module_cls(*args, **kwargs)
-#         self.im_module = module_cls(*args, **kwargs)
-
-#     def forward(self, x: complex_nn.ComplexTensor, *args, **kwargs) -> complex_nn.ComplexTensor:
-#         return complex_nn.torch_complex_from_reim(
-#             self.re_module(x.real, *args, **kwargs) - self.im_module(x.imag, *args, **kwargs),
-#             self.re_module(x.imag, *args, **kwargs) + self.im_module(x.real, *args, **kwargs),
-#         )
+def torch_complex_from_reim(re, im):
+    return torch.view_as_complex(torch.stack([re, im], dim=-1))
 
 
-# ComplexConv2d = functools.partial(ArgsComplexMultiplicationWrapper, nn.Conv2d)
-# ComplexConvTranspose2d = functools.partial(ArgsComplexMultiplicationWrapper, nn.ConvTranspose2d)
+class ArgsComplexMultiplicationWrapper(nn.Module):
+    """Adapted from `asteroid`'s `complex_nn.py`, allowing args/kwargs to be passed through forward().
+
+    Make a complex-valued module `F` from a real-valued module `f` by applying
+    complex multiplication rules:
+
+    F(a + i b) = f1(a) - f1(b) + i (f2(b) + f2(a))
+
+    where `f1`, `f2` are instances of `f` that do *not* share weights.
+
+    Args:
+        module_cls (callable): A class or function that returns a Torch module/functional.
+            Constructor of `f` in the formula above.  Called 2x with `*args`, `**kwargs`,
+            to construct the real and imaginary component modules.
+    """
+
+    def __init__(self, module_cls, *args, **kwargs):
+        super().__init__()
+        self.re_module = module_cls(*args, **kwargs)
+        self.im_module = module_cls(*args, **kwargs)
+
+    def forward(self, x, *args, **kwargs):
+        return torch_complex_from_reim(
+            self.re_module(x.real, *args, **kwargs) - self.im_module(x.imag, *args, **kwargs),
+            self.re_module(x.imag, *args, **kwargs) + self.im_module(x.real, *args, **kwargs),
+        )
+
+
+ComplexConv2d = functools.partial(ArgsComplexMultiplicationWrapper, nn.Conv2d)
+ComplexConvTranspose2d = functools.partial(ArgsComplexMultiplicationWrapper, nn.ConvTranspose2d)

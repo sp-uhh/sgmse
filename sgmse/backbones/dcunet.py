@@ -1,17 +1,39 @@
-from email.policy import default
-import warnings
-import functools
+from functools import partial
 import numpy as np
 
 import torch
 from torch import nn, Tensor
-
-from asteroid import complex_nn
-from asteroid.masknn import norms, activations
-from asteroid.utils.torch_utils import script_if_tracing, pad_x_to_y
+from torch.nn.modules.batchnorm import _BatchNorm
 
 from .shared import BackboneRegistry, ComplexConv2d, ComplexConvTranspose2d, ComplexLinear, \
-    DiffusionStepEmbedding, GaussianFourierProjection, FeatureMapDense
+    DiffusionStepEmbedding, GaussianFourierProjection, FeatureMapDense, torch_complex_from_reim
+
+
+def get_activation(name):
+    if name == "silu":
+        return nn.SiLU
+    elif name == "relu":
+        return nn.ReLU
+    elif name == "leaky_relu":
+        return nn.LeakyReLU
+    else:
+        raise NotImplementedError(f"Unknown activation: {name}")
+
+
+class BatchNorm(_BatchNorm):
+    def _check_input_dim(self, input):
+        if input.dim() < 2 or input.dim() > 4:
+            raise ValueError("expected 4D or 3D input (got {}D input)".format(input.dim()))
+
+
+class OnReIm(nn.Module):
+    def __init__(self, module_cls, *args, **kwargs):
+        super().__init__()
+        self.re_module = module_cls(*args, **kwargs)
+        self.im_module = module_cls(*args, **kwargs)
+
+    def forward(self, x):
+        return torch_complex_from_reim(self.re_module(x.real), self.im_module(x.imag))
 
 
 # Code for DCUNet largely copied from Danilo's `informedenh` repo, cheers!
@@ -173,7 +195,7 @@ class DCUNet(nn.Module):
         dcunet_time_embedding: str = "gfp",
         dcunet_temb_layers_global: int = 2,
         dcunet_temb_layers_local: int = 1,
-        dcunet_temb_activation: str = 'swish',
+        dcunet_temb_activation: str = "silu",
         dcunet_time_embedding_complex: bool = False,
         dcunet_fix_length: str = "pad",
         dcunet_mask_bound: str = "none",
@@ -226,7 +248,7 @@ class DCUNet(nn.Module):
             for _ in range(self.temb_layers_global):
                 embed_ops += [
                     ComplexLinear(embed_dim, embed_dim, complex_valued=True),
-                    activations.get_complex(dcunet_temb_activation)()
+                    OnReIm(get_activation(dcunet_temb_activation))
                 ]
         self.embed = nn.Sequential(*embed_ops)
 
@@ -249,9 +271,34 @@ class DCUNet(nn.Module):
 
     @staticmethod
     def add_argparse_args(parser):
+        parser.add_argument("--input-channels", type=int, default=1,
+            help="The number of (complex-valued) input channels provided as input to the backbone DNN. "
+                "2 by default (for x_t and y).")
+        parser.add_argument("--dcunet-architecture", type=str, choices=DCUNET_ARCHITECTURES.keys(),
+            help="The concrete DCUNet architecture")
+        parser.add_argument("--dcunet-time-embedding", type=str, choices=("gfp", "ds", "none"),
+            help="Timestep embedding style. 'gfp' (Gaussian Fourier Projections) by default.", default="gfp")
+        parser.add_argument("--dcunet-temb-layers-global", type=int, default=1,
+            help="Number of global linear+activation layers for the time embedding. 1 by default.")
+        parser.add_argument("--dcunet-temb-layers-local", type=int, default=1,
+            help="Number of local (per-encoder/per-decoder) linear+activation layers for the time embedding. 1 by default.")
+        parser.add_argument("--dcunet-temb-activation", type=str, default="silu",
+            help="The (complex) activation to use between all (global&local) time embedding layers.")
+        parser.add_argument("--dcunet-time-embedding-complex", action="store_true",
+            help="Use complex-valued timestep embedding. Compatible with 'gfp' and 'ds' embeddings.")
+        parser.add_argument("--dcunet-fix-length", type=str, choices=("pad", "trim", "none"),
+            help="DCUNet strategy to 'fix' mismatched input timespan. 'pad' by default.", default="pad")
+        parser.add_argument("--dcunet-mask-bound", type=str, choices=("tanh", "sigmoid", "none"), default="none",
+            help="DCUNet output bounding strategy. 'none' by default.")
+        parser.add_argument("--dcunet-norm-type", type=str, choices=("bN", "CbN"), default="bN",
+            help="The type of norm to use within each encoder and decoder layer. "
+                "'bN' (real/imaginary separate batch norm) by default.")
+        parser.add_argument("--dcunet-activation", type=str, choices=("leaky_relu", "relu", "silu"), default="leaky_relu",
+            help="The activation to use within each encoder and decoder layer. 'leaky_relu' by default.")
         return parser
 
-    def forward(self, spec: complex_nn.ComplexTensor, t: torch.Tensor) -> Tensor:
+
+    def forward(self, spec, t) -> Tensor:
         """
         Input shape is expected to be $(batch, nfreqs, time)$, with $nfreqs - 1$ divisible
         by $f_0 * f_1 * ... * f_N$ where $f_k$ are the frequency strides of the encoders,
@@ -291,7 +338,6 @@ class DCUNet(nn.Module):
         return _fix_dcu_output_dims(self.fix_length_mode, out, x)
 
 
-@script_if_tracing
 def _fix_dcu_input_dims(fix_length_mode, x, encoders_stride_product):
     """Pad or trim `x` to a length compatible with DCUNet."""
     freq_prod = int(encoders_stride_product[0])
@@ -320,17 +366,20 @@ def _fix_dcu_input_dims(fix_length_mode, x, encoders_stride_product):
     return x
 
 
-@script_if_tracing
 def _fix_dcu_output_dims(fix_length_mode, out, x):
-    """Fix shape of `out` to the original shape of `x`."""
-    return pad_x_to_y(out, x)
+    """Fix shape of `out` to the original shape of `x` by padding/cropping."""
+    inp_len = x.shape[-1]
+    output_len = out.shape[-1]
+    return nn.functional.pad(out, [0, inp_len - output_len])
 
 
 def _get_norm(norm_type):
     if norm_type == "CbN":
         return ComplexBatchNorm
+    elif norm_type == "bN":
+        return partial(OnReIm, BatchNorm)
     else:
-        return norms.get_complex(norm_type)
+        raise NotImplementedError(f"Unknown norm type: {norm_type}")
 
 
 class DCUNetComplexEncoderBlock(nn.Module):
@@ -347,7 +396,7 @@ class DCUNetComplexEncoderBlock(nn.Module):
         embed_dim=None,
         complex_time_embedding=False,
         temb_layers=1,
-        temb_activation="swish"
+        temb_activation="silu"
     ):
         super().__init__()
 
@@ -365,22 +414,22 @@ class DCUNetComplexEncoderBlock(nn.Module):
             in_chan, out_chan, kernel_size, stride, padding, bias=norm_type is None, dilation=dilation
         )
         self.norm = _get_norm(norm_type)(out_chan)
-        self.activation = activations.get_complex(activation)()
+        self.activation = OnReIm(get_activation(activation))
         self.embed_dim = embed_dim
         if self.embed_dim is not None:
             ops = []
             for _ in range(max(0, self.temb_layers - 1)):
                 ops += [
                     ComplexLinear(self.embed_dim, self.embed_dim, complex_valued=True),
-                    activations.get_complex(self.temb_activation)()
+                    OnReIm(get_activation(self.temb_activation))
                 ]
             ops += [
                 FeatureMapDense(self.embed_dim, self.out_chan, complex_valued=True),
-                activations.get_complex(self.temb_activation)()
+                OnReIm(get_activation(self.temb_activation))
             ]
             self.embed_layer = nn.Sequential(*ops)
 
-    def forward(self, x: complex_nn.ComplexTensor, t_embed: complex_nn.ComplexTensor):
+    def forward(self, x, t_embed):
         y = self.conv(x)
         if self.embed_dim is not None:
             y = y + self.embed_layer(t_embed)
@@ -421,22 +470,22 @@ class DCUNetComplexDecoderBlock(nn.Module):
             in_chan, out_chan, kernel_size, stride, padding, output_padding, dilation=dilation, bias=norm_type is None
         )
         self.norm = _get_norm(norm_type)(out_chan)
-        self.activation = activations.get_complex(activation)()
+        self.activation = OnReIm(get_activation(activation))
         self.embed_dim = embed_dim
         if self.embed_dim is not None:
             ops = []
             for _ in range(max(0, self.temb_layers - 1)):
                 ops += [
                     ComplexLinear(self.embed_dim, self.embed_dim, complex_valued=True),
-                    activations.get_complex(self.temb_activation)()
+                    OnReIm(get_activation(self.temb_activation))
                 ]
             ops += [
                 FeatureMapDense(self.embed_dim, self.out_chan, complex_valued=True),
-                activations.get_complex(self.temb_activation)()
+                OnReIm(get_activation(self.temb_activation))
             ]
             self.embed_layer = nn.Sequential(*ops)
 
-    def forward(self, x: complex_nn.ComplexTensor, t_embed: complex_nn.ComplexTensor, output_size=None):
+    def forward(self, x, t_embed, output_size=None):
         y = self.deconv(x, output_size=output_size)
         if self.embed_dim is not None:
             y = y + self.embed_layer(t_embed)
