@@ -13,8 +13,8 @@ numpy==1.22.2
 pandas==1.4.0
 pesq==0.0.4
 Pillow==9.0.1
-pytorch-lightning==1.7.0
-pysepm @ https://github.com/schmiph2/pysepm/archive/master.zip  # potentially unstable dependency, remove if it makes trouble
+protobuf==3.19.4
+pytorch-lightning==1.6.5
 pystoi==0.3.3
 scipy==1.8.0
 sdeint==0.2.4

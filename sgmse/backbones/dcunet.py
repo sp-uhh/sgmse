@@ -166,8 +166,7 @@ DCUNET_ARCHITECTURES = {
 class DCUNet(nn.Module):
     @staticmethod
     def add_argparse_args(parser):
-        parser.add_argument("--input-channels", type=int, default=1, help="The number of (complex-valued) input channels provided as input to the backbone DNN. 2 by default (for x_t and y).")
-        parser.add_argument("--dcunet-architecture", type=str, choices=DCUNET_ARCHITECTURES.keys(), help="The concrete DCUNet architecture")
+        parser.add_argument("--dcunet-architecture", type=str, default="DilDCUNet-v2", choices=DCUNET_ARCHITECTURES.keys(), help="The concrete DCUNet architecture. 'DilDCUNet-v2' by default.")
         parser.add_argument("--dcunet-time-embedding", type=str, choices=("gfp", "ds", "none"), default="gfp", help="Timestep embedding style. 'gfp' (Gaussian Fourier Projections) by default.")
         parser.add_argument("--dcunet-temb-layers-global", type=int, default=1, help="Number of global linear+activation layers for the time embedding. 1 by default.")
         parser.add_argument("--dcunet-temb-layers-local", type=int, default=1, help="Number of local (per-encoder/per-decoder) linear+activation layers for the time embedding. 1 by default.")
@@ -182,7 +181,6 @@ class DCUNet(nn.Module):
     def __init__(
         self,
         dcunet_architecture: str = "DilDCUNet-v2",
-        input_channels: int = 2,
         dcunet_time_embedding: str = "gfp",
         dcunet_temb_layers_global: int = 2,
         dcunet_temb_layers_local: int = 1,
@@ -201,7 +199,7 @@ class DCUNet(nn.Module):
         self.fix_length_mode = (dcunet_fix_length if dcunet_fix_length != "none" else None)
         self.norm_type = dcunet_norm_type
         self.activation = dcunet_activation
-        self.input_channels = input_channels
+        self.input_channels = 2  # for x_t and y -- note that this is 2 rather than 4, because we directly treat complex channels in this DNN
         self.time_embedding = (dcunet_time_embedding if dcunet_time_embedding != "none" else None)
         self.time_embedding_complex = dcunet_time_embedding_complex
         self.temb_layers_global = dcunet_temb_layers_global

@@ -1,3 +1,4 @@
+from os import sync
 import time
 from math import ceil
 import warnings
@@ -16,17 +17,17 @@ from sgmse.util.other import pad_spec
 class ScoreModel(pl.LightningModule):
     @staticmethod
     def add_argparse_args(parser):
-        parser.add_argument("--lr", type=float, default=1e-4, help="The learning rate")
+        parser.add_argument("--lr", type=float, default=1e-4, help="The learning rate (1e-4 by default)")
         parser.add_argument("--ema_decay", type=float, default=0.999, help="The parameter EMA decay constant (0.999 by default)")
         parser.add_argument("--t_eps", type=float, default=0.03, help="The minimum time (3e-2 by default)")
-        parser.add_argument("--eval_start", type=int, default=0, help="Determines the epoch when to start with evalution during training.")
-        parser.add_argument("--num_eval_files", type=int, default=0, help="Number of files for speech enhancement performance evaluation during training.")
+        parser.add_argument("--num_eval_files", type=int, default=20, help="Number of files for speech enhancement performance evaluation during training. Pass 0 to turn off (no checkpoints based on evaluation metrics will be generated).")
         parser.add_argument("--loss_type", type=str, default="mse", choices=("mse", "mae"), help="The type of loss function to use.")
         return parser
 
-    def __init__(self, backbone, sde, lr=1e-4, ema_decay=0.999, t_eps=3e-2, 
-            nolog=False, eval_start=0, num_eval_files=0,
-            loss_type='mse', data_module_cls=None, **kwargs):
+    def __init__(
+        self, backbone, sde, lr=1e-4, ema_decay=0.999, t_eps=3e-2,
+        num_eval_files=20, loss_type='mse', data_module_cls=None, **kwargs
+    ):
         """
         Create a new ScoreModel.
 
@@ -52,13 +53,10 @@ class ScoreModel(pl.LightningModule):
         self._error_loading_ema = False
         self.t_eps = t_eps
         self.loss_type = loss_type
-        self.eval_start = eval_start
         self.num_eval_files = num_eval_files
 
-        self.save_hyperparameters(ignore=['nolog'])
+        self.save_hyperparameters(ignore=['no_wandb'])
         self.data_module = data_module_cls(**kwargs, gpu=kwargs.get('gpus', 0) > 0)
-        # Construct the reduce-operation function for the loss calculation
-        self.nolog = nolog
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
@@ -129,15 +127,11 @@ class ScoreModel(pl.LightningModule):
         self.log('valid_loss', loss, on_step=False, on_epoch=True)
 
         # Evaluate speech enhancement performance
-        if batch_idx == 0 and self.num_eval_files != 0 and self.current_epoch >= self.eval_start:
+        if batch_idx == 0 and self.num_eval_files != 0:
             pesq, si_sdr, estoi = evaluate_model(self, self.num_eval_files)
             self.log('pesq', pesq, on_step=False, on_epoch=True)
             self.log('si_sdr', si_sdr, on_step=False, on_epoch=True)
             self.log('estoi', estoi, on_step=False, on_epoch=True)
-        elif batch_idx == 0 and self.num_eval_files != 0 and self.current_epoch < self.eval_start:
-            self.log('pesq', 0.0, on_step=False, on_epoch=True)
-            self.log('si_sdr', 0.0, on_step=False, on_epoch=True)
-            self.log('estoi', 0.0, on_step=False, on_epoch=True)
 
         return loss
 
