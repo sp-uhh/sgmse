@@ -29,7 +29,10 @@ baselines/
 __paths__.py
 *.csv
 *.pdf
+*.jpg
+*.png
 *.html
+mushra/
 
 # eshell files
 /eshell/history
