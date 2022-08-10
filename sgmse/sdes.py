@@ -4,7 +4,6 @@ Abstract SDE classes, Reverse SDE, and VE/VP SDEs.
 Taken and adapted from https://github.com/yang-song/score_sde_pytorch/blob/1618ddea340f3e4a2ed7852a0694a809775cf8d0/sde_lib.py
 """
 import abc
-from email.policy import default
 import warnings
 
 import numpy as np
@@ -144,6 +143,14 @@ class SDE(abc.ABC):
 
 @SDERegistry.register("ouve")
 class OUVESDE(SDE):
+    @staticmethod
+    def add_argparse_args(parser):
+        parser.add_argument("--sde-n", type=int, default=1000, help="The number of timesteps in the SDE discretization. 30 by default")
+        parser.add_argument("--theta", type=float, default=1.5, help="The constant stiffness of the Ornstein-Uhlenbeck process. 1.5 by default.")
+        parser.add_argument("--sigma-min", type=float, default=0.05, help="The minimum sigma to use. 0.05 by default.")
+        parser.add_argument("--sigma-max", type=float, default=0.5, help="The maximum sigma to use. 0.5 by default.")
+        return parser
+
     def __init__(self, theta, sigma_min, sigma_max, N=1000, **ignored_kwargs):
         """Construct an Ornstein-Uhlenbeck Variance Exploding SDE.
 
@@ -209,36 +216,37 @@ class OUVESDE(SDE):
     def marginal_prob(self, x0, t, y):
         return self._mean(x0, t, y), self._std(t)
 
-    def prior_sampling(self, shape, y, conditional_prior=True):
+    def prior_sampling(self, shape, y):
         if shape != y.shape:
             warnings.warn(f"Target shape {shape} does not match shape of y {y.shape}! Ignoring target shape.")
         std = self._std(torch.ones((y.shape[0],), device=y.device))
-        if conditional_prior:
-            x_T = y + torch.randn_like(y) * std[:, None, None, None]
-        else:
-            x_T = torch.randn_like(y) * std[:, None, None, None]
+        x_T = y + torch.randn_like(y) * std[:, None, None, None]
         return x_T
 
     def prior_logp(self, z):
         raise NotImplementedError("prior_logp for OU SDE not yet implemented!")
 
+
+@SDERegistry.register("ouvp")
+class OUVPSDE(SDE):
+    # !!! We do not utilize this SDE in our works due to observed instabilities around t=0.2. !!!
     @staticmethod
     def add_argparse_args(parser):
         parser.add_argument("--sde-n", type=int, default=1000,
             help="The number of timesteps in the SDE discretization. 1000 by default")
-        parser.add_argument("--theta", type=float, default=1.5, 
-            help="The constant stiffness of the Ornstein-Uhlenbeck process.")
-        parser.add_argument("--sigma-min", type=float, default=0.05, 
-            help="The minimum sigma to use.")
-        parser.add_argument("--sigma-max", type=float, default=0.5, 
-            help="The maximum sigma to use.")
+        parser.add_argument("--beta-min", type=float, required=True,
+            help="The minimum beta to use.")
+        parser.add_argument("--beta-max", type=float, required=True,
+            help="The maximum beta to use.")
+        parser.add_argument("--stiffness", type=float, default=1,
+            help="The stiffness factor for the drift, to be multiplied by 0.5*beta(t). 1 by default.")
         return parser
 
-
-@SDERegistry.register("ouvp")
-class OUVPSDE(SDE):
     def __init__(self, beta_min, beta_max, stiffness=1, N=1000, **ignored_kwargs):
-        """Construct an Ornstein-Uhlenbeck Variance Preserving SDE:
+        """
+        !!! We do not utilize this SDE in our works due to observed instabilities around t=0.2. !!!
+
+        Construct an Ornstein-Uhlenbeck Variance Preserving SDE:
 
         dx = -1/2 * beta(t) * stiffness * (y-x) dt + sqrt(beta(t)) * dw
 
@@ -288,27 +296,12 @@ class OUVPSDE(SDE):
     def marginal_prob(self, x0, t, y):
         return self._mean(x0, t, y), self._std(t)
 
-    def prior_sampling(self, shape, y, conditional_prior=True):
+    def prior_sampling(self, shape, y):
         if shape != y.shape:
             warnings.warn(f"Target shape {shape} does not match shape of y {y.shape}! Ignoring target shape.")
         std = self._std(torch.ones((y.shape[0],), device=y.device))
-        if conditional_prior:
-            x_T = y + torch.randn_like(y) * std[:, None, None, None]
-        else:
-            x_T = torch.randn_like(y) * std[:, None, None, None]
+        x_T = y + torch.randn_like(y) * std[:, None, None, None]
         return x_T
 
     def prior_logp(self, z):
         raise NotImplementedError("prior_logp for OU SDE not yet implemented!")
-
-    @staticmethod
-    def add_argparse_args(parser):
-        parser.add_argument("--sde-n", type=int, default=1000,
-            help="The number of timesteps in the SDE discretization. 1000 by default")
-        parser.add_argument("--beta-min", type=float, required=True,
-            help="The minimum beta to use.")
-        parser.add_argument("--beta-max", type=float, required=True,
-            help="The maximum beta to use.")
-        parser.add_argument("--stiffness", type=float, default=1,
-            help="The stiffness factor for the drift, to be multiplied by 0.5beta(t). 1 by default.")
-        return parser

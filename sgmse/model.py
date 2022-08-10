@@ -1,26 +1,33 @@
+from os import sync
+import time
 from math import ceil
 import warnings
-
-import matplotlib.pyplot as plt
 
 import torch
 import pytorch_lightning as pl
 from torch_ema import ExponentialMovingAverage
-import wandb
 
 from sgmse import sampling
 from sgmse.sdes import SDERegistry
 from sgmse.backbones import BackboneRegistry
 from sgmse.util.inference import evaluate_model
-from utils import pad_spec
-import time
+from sgmse.util.other import pad_spec
 
 
 class ScoreModel(pl.LightningModule):
-    def __init__(self, backbone, sde, lr=1e-4, ema_decay=0.999, t_eps=3e-2, 
-            time_cond = "t", transform='none', input_y= True, nolog=False, 
-            eval_start=0, num_eval_files=0, loss_type='mse', data_module_cls=None,
-            minus=True, **kwargs):
+    @staticmethod
+    def add_argparse_args(parser):
+        parser.add_argument("--lr", type=float, default=1e-4, help="The learning rate (1e-4 by default)")
+        parser.add_argument("--ema_decay", type=float, default=0.999, help="The parameter EMA decay constant (0.999 by default)")
+        parser.add_argument("--t_eps", type=float, default=0.03, help="The minimum time (3e-2 by default)")
+        parser.add_argument("--num_eval_files", type=int, default=20, help="Number of files for speech enhancement performance evaluation during training. Pass 0 to turn off (no checkpoints based on evaluation metrics will be generated).")
+        parser.add_argument("--loss_type", type=str, default="mse", choices=("mse", "mae"), help="The type of loss function to use.")
+        return parser
+
+    def __init__(
+        self, backbone, sde, lr=1e-4, ema_decay=0.999, t_eps=3e-2,
+        num_eval_files=20, loss_type='mse', data_module_cls=None, **kwargs
+    ):
         """
         Create a new ScoreModel.
 
@@ -30,17 +37,12 @@ class ScoreModel(pl.LightningModule):
             lr: The learning rate of the optimizer. (1e-4 by default).
             ema_decay: The decay constant of the parameter EMA (0.999 by default).
             t_eps: The minimum time to practically run for to avoid issues very close to zero (1e-5 by default).
+            loss_type: The type of loss to use (wrt. noise z/std). Options are 'mse' (default), 'mae'
         """
         super().__init__()
         # Initialize Backbone DNN
-        self.input_y = input_y
         dnn_cls = BackboneRegistry.get_by_name(backbone)
-        if self.input_y:
-            ch = kwargs.get('input_channels', None)
-            if ch is not None and ch != 2:
-                warnings.warn("Overriding input_channels from {ch} to 2 since 'input_y' is set")
-            kwargs.update(input_channels=2)
-        self.dnn = dnn_cls(**kwargs, input_y=input_y)
+        self.dnn = dnn_cls(**kwargs)
         # Initialize SDE
         sde_cls = SDERegistry.get_by_name(sde)
         self.sde = sde_cls(**kwargs)
@@ -51,31 +53,10 @@ class ScoreModel(pl.LightningModule):
         self._error_loading_ema = False
         self.t_eps = t_eps
         self.loss_type = loss_type
-        self.eval_start = eval_start
         self.num_eval_files = num_eval_files
-        self.time_cond = time_cond
-        self.minus = minus
 
-        self.save_hyperparameters(ignore=['nolog'])
+        self.save_hyperparameters(ignore=['no_wandb'])
         self.data_module = data_module_cls(**kwargs, gpu=kwargs.get('gpus', 0) > 0)
-        # Construct the reduce-operation function for the loss calculation
-        self.nolog = nolog
-
-    @staticmethod
-    def add_argparse_args(parser):
-        parser.add_argument("--lr", type=float, default=1e-4, help="The learning rate")
-        parser.add_argument("--ema_decay", type=float, default=0.999, help="The parameter EMA decay constant (0.999 by default)")
-        parser.add_argument("--t_eps", type=float, default=0.03, help="The minimum time (3e-2 by default)")
-        parser.add_argument("--eval_start", type=int, default=0, help="Determines the epoch when to start with evalution during training.")
-        parser.add_argument("--num_eval_files", type=int, default=0, help="Number of files for speech enhancement performance evaluation during training.")
-        parser.add_argument("--input_y", dest='input_y', action="store_true", help="Provide y to the score model")
-        parser.add_argument("--no_input_y", dest='input_y', action="store_false", help="Don't provide y to the score model")
-        parser.set_defaults(input_y=True)
-        parser.add_argument("--loss_type", type=str, default="mse", choices=("mse", "mae", "gaussian_entropy"), help="The type of loss function to use.")
-        parser.add_argument("--time_cond", type=str, default="t", choices=("t", "std"), help="The time conditioner input to the DNN.")
-        parser.add_argument("--no_minus", dest="minus", action="store_false", help="Set a minus before DNN return.")
-        parser.set_defaults(minus=True)
-        return parser
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
@@ -144,35 +125,26 @@ class ScoreModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         loss = self._step(batch, batch_idx)
         self.log('valid_loss', loss, on_step=False, on_epoch=True)
+
         # Evaluate speech enhancement performance
-        if batch_idx == 0 and self.num_eval_files != 0 and self.current_epoch >= self.eval_start:
+        if batch_idx == 0 and self.num_eval_files != 0:
             pesq, si_sdr, estoi = evaluate_model(self, self.num_eval_files)
             self.log('pesq', pesq, on_step=False, on_epoch=True)
             self.log('si_sdr', si_sdr, on_step=False, on_epoch=True)
             self.log('estoi', estoi, on_step=False, on_epoch=True)
-        elif batch_idx == 0 and self.num_eval_files != 0 and self.current_epoch < self.eval_start:
-            self.log('pesq', 0.0, on_step=False, on_epoch=True)
-            self.log('si_sdr', 0.0, on_step=False, on_epoch=True)
-            self.log('estoi', 0.0, on_step=False, on_epoch=True)
 
         return loss
 
     def forward(self, x, t, y):
-        std = self.sde._std(t)
-        if self.time_cond == "std":
-            time_cond = std  # as in the original implementation
-        else:
-            time_cond = t # as done before 
         # Concatenate y as an extra channel
-        if self.input_y == True:
-            dnn_input = torch.cat([x, y], dim=1)
-        else:
-            dnn_input = x
+        dnn_input = torch.cat([x, y], dim=1)
+        
         # the minus is most likely unimportant here - taken from Song's repo
-        score = -self.dnn(dnn_input, time_cond)
+        score = -self.dnn(dnn_input, t)
         return score
 
     def to(self, *args, **kwargs):
+        """Override PyTorch .to() to also transfer the EMA of the model weights"""
         self.ema.to(*args, **kwargs)
         return super().to(*args, **kwargs)
 
@@ -249,7 +221,11 @@ class ScoreModel(pl.LightningModule):
 
     def enhance(self, y, sampler_type="pc", predictor="reverse_diffusion",
         corrector="ald", N=30, corrector_steps=1, snr=0.5, timeit=False,
-        **kwargs):
+        **kwargs
+    ):
+        """
+        One-call speech enhancement of noisy speech `y`, for convenience.
+        """
         sr=16000
         start = time.time()
         T_orig = y.size(1) 

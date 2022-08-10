@@ -1,5 +1,3 @@
-import torch
-
 def batch_broadcast(a, x):
     """Broadcasts a over all dimensions of x, except the batch dimension, which must match."""
 

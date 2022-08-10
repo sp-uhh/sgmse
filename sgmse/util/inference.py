@@ -1,15 +1,15 @@
 import torch
 from torchaudio import load
-from utils import si_sdr, pad_spec
+
 from pesq import pesq
-from tqdm import tqdm
 from pystoi import stoi
 
+from .other import si_sdr, pad_spec
 
 # Settings
 sr = 16000
-snr = 0.33
-N = 50
+snr = 0.5
+N = 30
 corrector_steps = 1
 
 

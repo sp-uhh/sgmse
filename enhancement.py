@@ -8,32 +8,24 @@ from torchaudio import load
 from tqdm import tqdm
 
 from sgmse.model import ScoreModel
-from utils import ensure_dir, pad_spec
+from sgmse.util.other import ensure_dir, pad_spec
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--test", type=str, help="Specify test set.")
-    parser.add_argument("--train", type=str, help="Specify train set.")
-    parser.add_argument("--test_dir", type=str, required=True,
-        help='Directory containing the test data (must have subdirectory noisy/)')
+    parser.add_argument("--test_dir", type=str, required=True, help='Directory containing the test data (must have subdirectory noisy/)')
+    parser.add_argument("--enhanced_dir", type=str, required=True, help='Directory containing the enhanced data')
     parser.add_argument("--ckpt", type=str,  help='Path to model checkpoint.')
-    parser.add_argument("--corrector", type=str, choices=("ald", "none"), default="ald", 
-        help="Corrector class for the PC sampler.")
+    parser.add_argument("--corrector", type=str, choices=("ald", "langevin", "none"), default="ald", help="Corrector class for the PC sampler.")
     parser.add_argument("--corrector_steps", type=int, default=1, help="Number of corrector steps")
-    parser.add_argument("--snr", type=float, default=0.5, help="SNR value for annealed Langevin dynmaics.")
+    parser.add_argument("--snr", type=float, default=0.5, help="SNR value for (annealed) Langevin dynmaics.")
     parser.add_argument("--N", type=int, default=30, help="Number of reverse steps")
-    parser.add_argument("--no_cond_prior", dest="cond_prior", action="store_false", help="Sample from unconditional prior")
-    parser.set_defaults(cond_prior=True)
     args = parser.parse_args()
 
     noisy_dir = join(args.test_dir, 'noisy/')
     checkpoint_file = args.ckpt
     corrector_cls = args.corrector
-    conditional_prior = args.cond_prior
 
-    target_dir = "/data/home/welker/sgmse-fir-filters/enhanced/test_{}/train_{}/".format(
-        args.test, args.train)
-
+    target_dir = args.enhanced_dir
     ensure_dir(target_dir)
 
     # Settings
@@ -43,10 +35,7 @@ if __name__ == '__main__':
     corrector_steps = args.corrector_steps
 
     # Load score model 
-    model = ScoreModel.load_from_checkpoint(
-        checkpoint_file, base_dir='',
-        batch_size=16, num_workers=0, kwargs=dict(gpu=False)
-    )
+    model = ScoreModel.load_from_checkpoint(checkpoint_file, base_dir='', batch_size=16, num_workers=0, kwargs=dict(gpu=False))
     model.eval(no_ema=False)
     model.cuda()
 
@@ -70,7 +59,7 @@ if __name__ == '__main__':
         # Reverse sampling
         sampler = model.get_pc_sampler(
             'reverse_diffusion', corrector_cls, Y.cuda(), N=N, 
-            corrector_steps=corrector_steps, snr=snr, conditional_prior=conditional_prior)
+            corrector_steps=corrector_steps, snr=snr)
         sample, _ = sampler()
         
         # Backward transform in time domain
@@ -80,4 +69,4 @@ if __name__ == '__main__':
         x_hat = x_hat * norm_factor
 
         # Write enhanced wav file
-        write(target_dir+filename, x_hat.cpu().numpy(), 16000)
+        write(join(target_dir, filename), x_hat.cpu().numpy(), 16000)

@@ -1,8 +1,12 @@
+import os
+
 import numpy as np
+
 import scipy.stats
 from scipy.signal import butter, sosfilt
+
 import torch
-import os
+
 from pesq import pesq
 from pystoi import stoi
 
@@ -87,7 +91,7 @@ def pad_spec(Y):
 
 
 def ensure_dir(file_path):
-    directory = os.path.dirname(file_path)
+    directory = file_path
     if not os.path.exists(directory):
         os.makedirs(directory)
 

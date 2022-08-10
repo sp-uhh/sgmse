@@ -17,7 +17,7 @@
 """
 
 import torch
-#import sde_lib
+
 import numpy as np
 from ...sdes import OUVESDE, OUVPSDE
 
@@ -141,11 +141,10 @@ def get_score_fn(sde, model, train=False, continuous=False):
   """
   model_fn = get_model_fn(model, train=train)
 
-  #if isinstance(sde, sde_lib.VPSDE) or isinstance(sde, sde_lib.subVPSDE):
   if isinstance(sde, OUVPSDE):
     def score_fn(x, t):
       # Scale neural network output by standard deviation and flip sign
-      if continuous or isinstance(sde, sde_lib.subVPSDE):
+      if continuous:
         # For VP-trained models, t=0 corresponds to the lowest noise level
         # The maximum value of time embedding is assumed to 999 for
         # continuously-trained models.
@@ -161,7 +160,6 @@ def get_score_fn(sde, model, train=False, continuous=False):
       score = -score / std[:, None, None, None]
       return score
 
-  #elif isinstance(sde, sde_lib.VESDE):
   elif isinstance(sde, OUVESDE):
     def score_fn(x, t):
       if continuous:
