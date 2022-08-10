@@ -15,9 +15,7 @@
 
 # pylint: skip-file
 
-from email.policy import default
-from xmlrpc.client import Boolean
-from .ncsnpp_utils import utils, layers, layerspp, normalization
+from .ncsnpp_utils import layers, layerspp, normalization
 import torch.nn as nn
 import functools
 import torch
@@ -35,50 +33,17 @@ get_normalization = normalization.get_normalization
 default_initializer = layers.default_init
 
 
-def get_fir_kernel(name):
-    if name == 'song':
-        return [1, 3, 3, 1]
-    elif name == 'order8_mcclellan_06':
-        return [[ 8.40394633e-05,  6.72315706e-04,  2.35310497e-03,
-                  4.70620994e-03,  5.88276243e-03,  4.70620994e-03,
-                  2.35310497e-03,  6.72315706e-04,  8.40394633e-05],
-                [ 6.72315706e-04,  2.05039386e-03, -1.14395097e-03,
-                  -1.22722973e-02, -1.95005364e-02, -1.22722973e-02,
-                  -1.14395097e-03,  2.05039386e-03,  6.72315706e-04],
-                [ 2.35310497e-03, -1.14395097e-03, -1.73361706e-02,
-                  -2.13994441e-02, -1.51206589e-02, -2.13994441e-02,
-                  -1.73361706e-02, -1.14395097e-03,  2.35310497e-03],
-                [ 4.70620994e-03, -1.22722973e-02, -2.13994441e-02,
-                  8.32280939e-02,  1.75298062e-01,  8.32280939e-02,
-                  -2.13994441e-02, -1.22722973e-02,  4.70620994e-03],
-                [ 5.88276243e-03, -1.95005364e-02, -1.51206589e-02,
-                  1.75298062e-01,  3.31070843e-01,  1.75298062e-01,
-                  -1.51206589e-02, -1.95005364e-02,  5.88276243e-03],
-                [ 4.70620994e-03, -1.22722973e-02, -2.13994441e-02,
-                  8.32280939e-02,  1.75298062e-01,  8.32280939e-02,
-                  -2.13994441e-02, -1.22722973e-02,  4.70620994e-03],
-                [ 2.35310497e-03, -1.14395097e-03, -1.73361706e-02,
-                  -2.13994441e-02, -1.51206589e-02, -2.13994441e-02,
-                  -1.73361706e-02, -1.14395097e-03,  2.35310497e-03],
-                [ 6.72315706e-04,  2.05039386e-03, -1.14395097e-03,
-                  -1.22722973e-02, -1.95005364e-02, -1.22722973e-02,
-                  -1.14395097e-03,  2.05039386e-03,  6.72315706e-04],
-                [ 8.40394633e-05,  6.72315706e-04,  2.35310497e-03,
-                  4.70620994e-03,  5.88276243e-03,  4.70620994e-03,
-                  2.35310497e-03,  6.72315706e-04,  8.40394633e-05]]
-    else:
-        raise NotImplementedError(f"unknown FIR kernel: {name}")
-
-
 @BackboneRegistry.register("ncsnpp")
 class NCSNpp(nn.Module):
-    """NCSN++ model"""
+    """NCSN++ model, adapted from https://github.com/yang-song/score_sde repository"""
+
+    @staticmethod
+    def add_argparse_args(parser):
+        # TODO: add additional arguments of constructor, if you wish to modify them.
+        return parser
 
     def __init__(self,
-        sigma_max = 348,
         scale_by_sigma = True,
-        ema_rate = 0.999,
-        normalization = 'GroupNorm',
         nonlinearity = 'swish',
         nf = 128,
         ch_mult = (1, 1, 2, 2, 2, 2, 2),
@@ -93,19 +58,15 @@ class NCSNpp(nn.Module):
         progressive = 'output_skip',
         progressive_input = 'input_skip',
         progressive_combine = 'sum',
-        attention_type = 'ddpm',
         init_scale = 0.,
         fourier_scale = 16,
-        conv_size = 3,
         image_size = 256,
         embedding_type = 'fourier',
-        num_channels = 4,
         dropout = .0,
-        centered = False,
-        **kwargs):
+        **unused_kwargs
+    ):
         super().__init__()
         self.act = act = get_act(nonlinearity)
-        #self.register_buffer('sigmas', torch.tensor(utils.get_sigmas(config)))
 
         self.nf = nf = nf
         ch_mult = ch_mult
@@ -117,10 +78,9 @@ class NCSNpp(nn.Module):
         self.all_resolutions = all_resolutions = [image_size // (2 ** i) for i in range(num_resolutions)]
 
         self.conditional = conditional = conditional  # noise-conditional
-        self.centered = centered
         self.scale_by_sigma = scale_by_sigma
         fir = fir
-        fir_kernel = get_fir_kernel(fir_kernel)
+        fir_kernel = [1, 3, 3, 1]
         self.skip_rescale = skip_rescale = skip_rescale
         self.resblock_type = resblock_type = resblock_type.lower()
         self.progressive = progressive = progressive.lower()
@@ -133,22 +93,19 @@ class NCSNpp(nn.Module):
         combine_method = progressive_combine.lower()
         combiner = functools.partial(Combine, method=combine_method)
 
+        num_channels = 4  # x.real, x.imag, y.real, y.imag
         self.output_layer = nn.Conv2d(num_channels, 2, 1)
 
         modules = []
-        # timestep/noise_level embedding; only for continuous training
+        # timestep/noise_level embedding
         if embedding_type == 'fourier':
             # Gaussian Fourier features embeddings.
-            # assert config.training.continuous, "Fourier features are only used for continuous training."
-
             modules.append(layerspp.GaussianFourierProjection(
                 embedding_size=nf, scale=fourier_scale
             ))
             embed_dim = 2 * nf
-
         elif embedding_type == 'positional':
             embed_dim = nf
-
         else:
             raise ValueError(f'embedding type {embedding_type} unknown.')
 
@@ -287,23 +244,12 @@ class NCSNpp(nn.Module):
 
         self.all_modules = nn.ModuleList(modules)
 
-    @staticmethod
-    def add_argparse_args(parser):
-        parser.add_argument("--no-centered", dest="centered", action="store_false", help="The data is not centered [-1, 1]")
-        parser.add_argument("--centered", dest="centered", action="store_true", help="The data is centered [-1, 1]")
-        parser.set_defaults(centered=True)
-        parser.add_argument("--scale_by_sigma", dest="scale_by_sigma", action="store_true", help="Scale model output by std.")
-        parser.add_argument("--no-scale_by_sigma", dest="scale_by_sigma", action="store_false", help="Not scale model output by std.")
-        parser.set_defaults(scale_by_sigma=True)
-        parser.add_argument("--fir-kernel", choices=["song", "order8_mcclellan_06"], default="song")
-        return parser
-
     def forward(self, x, time_cond):
         # timestep/noise_level embedding; only for continuous training
         modules = self.all_modules
         m_idx = 0
 
-        # Convert real and imaginary parts into channel dimensions
+        # Convert real and imaginary parts of (x,y) into four channel dimensions
         x = torch.cat((x[:,[0],:,:].real, x[:,[0],:,:].imag,
                 x[:,[1],:,:].real, x[:,[1],:,:].imag), dim=1)
 
@@ -329,10 +275,6 @@ class NCSNpp(nn.Module):
             m_idx += 1
         else:
             temb = None
-
-        if not self.centered:
-            # If input data is in [0, 1]
-            x = 2 * x - 1.
 
         # Downsampling block
         input_pyramid = None
@@ -452,12 +394,11 @@ class NCSNpp(nn.Module):
             h = modules[m_idx](h)
             m_idx += 1
 
-        assert m_idx == len(modules)
-        if self.scale_by_sigma:
-            used_sigmas = used_sigmas.reshape((x.shape[0], *([1] * len(x.shape[1:]))))
-            h = h / used_sigmas
+        assert m_idx == len(modules), "Implementation error"
+        used_sigmas = used_sigmas.reshape((x.shape[0], *([1] * len(x.shape[1:]))))
+        h = h / used_sigmas
 
-        # Convert to complex number
+        # Convert back to complex number
         h = self.output_layer(h)
         h = torch.permute(h, (0, 2, 3, 1)).contiguous()
         h = torch.view_as_complex(h)[:,None, :, :]

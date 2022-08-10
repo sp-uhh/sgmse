@@ -1,7 +1,5 @@
 # Adapted from https://github.com/yang-song/score_sde_pytorch/blob/1618ddea340f3e4a2ed7852a0694a809775cf8d0/sampling.py
 """Various sampling methods."""
-from typing import Optional
-
 from scipy import integrate
 import torch
 
@@ -51,23 +49,6 @@ def get_pc_sampler(
     predictor = predictor_cls(sde, score_fn, probability_flow=probability_flow)
     corrector = corrector_cls(sde, score_fn, snr=snr, n_steps=corrector_steps)
 
-    def pc_sampler_intermediate():
-        """The PC sampler function with intermediate sampling results"""
-        with torch.no_grad():
-            xt = sde.prior_sampling(y.shape, y).to(y.device)
-            xt1 = xt    
-            timesteps = torch.linspace(sde.T, eps, sde.N, device=y.device)
-            reverse_samples = []
-            for i in range(sde.N):
-                t = timesteps[i]
-                vec_t = torch.ones(y.shape[0], device=y.device) * t
-                xt, xt_mean = corrector.update_fn(xt, vec_t, y)
-                xt, xt_mean = predictor.update_fn(xt, vec_t, y)
-                reverse_samples.append(xt_mean)
-            full_n_steps = sde.N * (corrector.n_steps + 1)
-            x_result = xt_mean if denoise else xt
-            return x_result, reverse_samples, xt1, full_n_steps
-
     def pc_sampler():
         """The PC sampler function."""
         with torch.no_grad():
@@ -81,11 +62,8 @@ def get_pc_sampler(
             x_result = xt_mean if denoise else xt
             ns = sde.N * (corrector.n_steps + 1)
             return x_result, ns
-
-    if intermediate:
-        return pc_sampler_intermediate
-    else:
-        return pc_sampler
+    
+    return pc_sampler
 
 
 def get_ode_sampler(

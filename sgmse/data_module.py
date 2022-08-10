@@ -28,11 +28,9 @@ class Specs(Dataset):
         if format == "default":
             self.clean_files = sorted(glob(join(data_dir, subset) + '/clean/*.wav'))
             self.noisy_files = sorted(glob(join(data_dir, subset) + '/noisy/*.wav'))
-        elif format == "dns":
-            self.noisy_files = sorted(glob(join(data_dir, subset) + '/noisy/*.wav'))
-            clean_dir = join(data_dir, subset) + '/clean/'
-            self.clean_files = [clean_dir + 'clean_fileid_' \
-                + noisy_file.split('/')[-1].split('_fileid_')[-1] for noisy_file in self.noisy_files]
+        else:
+            # Feel free to add your own directory format
+            raise NotImplementedError(f"Directory format {format} unknown!")
 
         self.dummy = dummy
         self.num_frames = num_frames
@@ -92,10 +90,27 @@ class Specs(Dataset):
 
 
 class SpecsDataModule(pl.LightningDataModule):
+    @staticmethod
+    def add_argparse_args(parser):
+        parser.add_argument("--base_dir", type=str, required=True, help="The base directory of the dataset. Should contain `train`, `valid` and `test` subdirectories, each of which contain `clean` and `noisy` subdirectories.")
+        parser.add_argument("--format", type=str, choices=("default", "dns"), default="default", help="Read file paths according to file naming format.")
+        parser.add_argument("--batch_size", type=int, default=8, help="The batch size. 8 by default.")
+        parser.add_argument("--n_fft", type=int, default=510, help="Number of FFT bins. 510 by default.")   # to assure 256 freq bins
+        parser.add_argument("--hop_length", type=int, default=128, help="Window hop length. 128 by default.")
+        parser.add_argument("--num_frames", type=int, default=256, help="Number of frames for the dataset. 256 by default.")
+        parser.add_argument("--window", type=str, choices=("sqrthann", "hann"), default="hann", help="The window function to use for the STFT. 'hann' by default.")
+        parser.add_argument("--num_workers", type=int, default=4, help="Number of workers to use for DataLoaders. 4 by default.")
+        parser.add_argument("--dummy", action="store_true", help="Use reduced dummy dataset for prototyping.")
+        parser.add_argument("--spec_factor", type=float, default=0.15, help="Factor to multiply complex STFT coefficients by. 0.15 by default.")
+        parser.add_argument("--spec_abs_exponent", type=float, default=0.5, help="Exponent e for the transformation abs(z)**e * exp(1j*angle(z)). 0.5 by default.")
+        parser.add_argument("--normalize", type=str, choices=("clean", "noisy", "not"), default="noisy", help="Normalize the input waveforms by the clean signal, the noisy signal, or not at all.")
+        parser.add_argument("--transform_type", type=str, choices=("exponent", "log", "none"), default="exponent", help="Spectogram transformation for input representation.")
+        return parser
+
     def __init__(
-        self, base_dir, format='default', batch_size=32,
+        self, base_dir, format='default', batch_size=8,
         n_fft=510, hop_length=128, num_frames=256, window='hann',
-        num_workers=4, dummy=False, spec_factor=0.33, spec_abs_exponent=0.5,
+        num_workers=4, dummy=False, spec_factor=0.15, spec_abs_exponent=0.5,
         gpu=True, normalize='noisy', transform_type="exponent", **kwargs
     ):
         super().__init__()
@@ -117,10 +132,10 @@ class SpecsDataModule(pl.LightningDataModule):
         self.kwargs = kwargs
 
     def setup(self, stage=None):
-        specs_kwargs = dict(stft_kwargs=self.stft_kwargs,
-                            num_frames=self.num_frames,
-                            spec_transform=self.spec_fwd, **self.stft_kwargs,
-                            **self.kwargs)
+        specs_kwargs = dict(
+            stft_kwargs=self.stft_kwargs, num_frames=self.num_frames,
+            spec_transform=self.spec_fwd, **self.kwargs
+        )
         if stage == 'fit' or stage is None:
             self.train_set = Specs(data_dir=self.base_dir, subset='train',
                 dummy=self.dummy, shuffle_spec=True, format=self.format,
@@ -190,38 +205,6 @@ class SpecsDataModule(pl.LightningDataModule):
     def istft(self, spec, length=None):
         window = self._get_window(spec)
         return torch.istft(spec, **{**self.istft_kwargs, "window": window, "length": length})
-
-    @staticmethod
-    def add_argparse_args(parser):
-        parser.add_argument("--base_dir", type=str, required=True,
-            help="The base directory of the dataset. Should contain `train`, `valid` and `test` subdirectories, "
-                "each of which contain `clean` and `noisy` subdirectories.")
-        parser.add_argument("--format", type=str, choices=("default", "dns"), default="default",
-            help="Read file paths according to file naming format.")
-        parser.add_argument("--batch_size", type=int, default=32,
-            help="The batch size. 32 by default.")
-        parser.add_argument("--n_fft", type=int, default=510,
-            help="Number of FFT bins. 510 by default.")   # to assure 256 freq bins
-        parser.add_argument("--hop_length", type=int, default=128,
-            help="Window hop length. 128 by default.")
-        parser.add_argument("--num_frames", type=int, default=256,
-            help="Number of frames for the dataset. 256 by default.")
-        parser.add_argument("--window", type=str, choices=("sqrthann", "hann"), default="hann",
-            help="The window function to use for the STFT. 'hann' by default.")
-        parser.add_argument("--num_workers", type=int, default=4,
-            help="Number of workers to use for DataLoaders. 4 by default.")
-        parser.add_argument("--dummy", action="store_true",
-            help="Use reduced dummy dataset for prototyping.")
-        parser.add_argument("--spec_factor", type=float, default=0.33,
-            help="Factor to multiply complex STFT coefficients by. 1 by default (no effect).")
-        parser.add_argument("--spec_abs_exponent", type=float, default=0.5,
-            help="Exponent e for the transformation abs(z)**e * exp(1j*angle(z)). "
-                "1 by default; set to values < 1 to bring out quieter features.")
-        parser.add_argument("--normalize", type=str, choices=("clean", "noisy", "not"), default="noisy",
-            help="Normalize the input waveforms by the clean signal, the noisy signal, or not at all.")
-        parser.add_argument("--transform_type", type=str, choices=("exponent", "log", "none"), default="exponent",
-            help="Spectogram transformation for input representation.")
-        return parser
 
     def train_dataloader(self):
         return DataLoader(

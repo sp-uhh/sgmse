@@ -29,6 +29,7 @@ TODO
 
 ## Citations
 
-We kindly ask you to cite our paper in your publication when using any of our research or code:
+We kindly ask you to cite our papers in your publication when using any of our research or code:
 
->Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay and Timo Gerkmann. *Speech Enhancement and Dereverberation with Diffusion-based Generative Models*, TODO, 2022.
+>Simon Welker, Julius Richter and Timo Gerkmann. *Speech enhancement with score-based generative models in the complex STFT domain*, ISCA Interspeech, 2022.
+>Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay and Timo Gerkmann. *Speech Enhancement and Dereverberation with Diffusion-based Generative Models*, TBD, 2022.
