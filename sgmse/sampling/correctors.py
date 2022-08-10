@@ -51,7 +51,7 @@ class LangevinCorrector(Corrector):
             noise_norm = torch.norm(noise.reshape(noise.shape[0], -1), dim=-1).mean()
             step_size = ((target_snr * noise_norm / grad_norm) ** 2 * 2).unsqueeze(0)
             x_mean = x + step_size[:, None, None, None] * grad
-            x = x_mean + torch.sqrt(step_size * 2)[:, None, None, None] * noise
+            x = x_mean + noise * torch.sqrt(step_size * 2)[:, None, None, None]
 
         return x, x_mean
 
