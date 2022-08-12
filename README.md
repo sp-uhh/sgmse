@@ -5,6 +5,8 @@ This repository contains the official PyTorch implementations for the 2022 paper
 - *Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain* [1]
 - *Speech Enhancement and Dereverberation with Diffusion-Based Generative Models* [2]
 
+Audio examples and further supplementary materials are available [on our project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse).
+
 
 ## Installation
 
