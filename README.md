@@ -1,5 +1,7 @@
 # Speech Enhancement and Dereverberation with Diffusion-based Generative Models
 
+<img src="https://raw.githubusercontent.com/sp-uhh/sgmse/main/diffusion_process.png" width="500" alt="Diffusion process on a spectrogram: In the forward process noise is gradually added to the clean speech spectrogram x0, while the reverse process learns to generate clean speech in an iterative fashion starting from the corrupted signal xT.">
+
 This repository contains the official PyTorch implementations for the 2022 papers:
 
 - [*Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain*](https://arxiv.org/abs/2203.17004), Jul 2022 [1]
