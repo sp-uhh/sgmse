@@ -2,8 +2,8 @@
 
 This repository contains the official PyTorch implementations for the 2022 papers:
 
-- *Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain* [1]
-- *Speech Enhancement and Dereverberation with Diffusion-Based Generative Models* [2]
+- [*Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain*](https://arxiv.org/abs/2203.17004), Jul 2022 [1]
+- [*Speech Enhancement and Dereverberation with Diffusion-Based Generative Models*](https://arxiv.org/abs/2208.05830), Aug 2022 [2]
 
 Audio examples and further supplementary materials are available [on our project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse).
 
@@ -41,8 +41,9 @@ where `your_base_dir` should be a path to a folder containing subdirectories `tr
 To see all available training options, run `python train.py --help`. Note that the available options for the SDE and the backbone network change depending on which SDE and backbone you use. These can be set through the `--sde` and `--backbone` options.
 
 **Note:**
-- Our Interspeech paper [1] uses `--backbone dcunet`. You need to pass `--n_fft 512` to make it work.
 - Our journal preprint [2] uses `--backbone ncsnpp`.
+- Our Interspeech paper [1] uses `--backbone dcunet`. You need to pass `--n_fft 512` to make it work.
+    - Also note that the default parameters for the spectrogram transformation in this repository are slightly different from the ones listed in the paper (`--spec_factor 0.15` rather than `--spec_factor 0.333`), but we've found the value in this repository to generally perform better for both models [1] and [2].
 
 
 ## Evaluation
@@ -67,6 +68,8 @@ Both scripts should receive the same `--test_dir` and `--enhanced_dir` parameter
 
 We kindly ask you to cite our papers in your publication when using any of our research or code:
 
->[1] Simon Welker, Julius Richter and Timo Gerkmann. *Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain*, ISCA Interspeech, 2022.
+>[1] Simon Welker, Julius Richter and Timo Gerkmann. "Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain", *ISCA Interspeech*, Jul 2022.
 >
->[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay and Timo Gerkmann. *Speech Enhancement and Dereverberation with Diffusion-Based Generative Models*, TBD, 2022.
+>[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay and Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", *arXiv preprint arXiv:2208.05830*, Aug 2022.
+
+The paper [2] has been submitted to a journal and is currently under review. The appropriate citation for it may therefore change in the future.
