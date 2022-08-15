@@ -45,7 +45,7 @@ To see all available training options, run `python train.py --help`. Note that t
 **Note:**
 - Our journal preprint [2] uses `--backbone ncsnpp`.
 - Our Interspeech paper [1] uses `--backbone dcunet`. You need to pass `--n_fft 512` to make it work.
-    - Also note that the default parameters for the spectrogram transformation in this repository are slightly different from the ones listed in the paper (`--spec_factor 0.15` rather than `--spec_factor 0.333`), but we've found the value in this repository to generally perform better for both models [1] and [2].
+    - Also note that the default parameters for the spectrogram transformation in this repository are slightly different from the ones listed in the first (Interspeech) paper (`--spec_factor 0.15` rather than `--spec_factor 0.333`), but we've found the value in this repository to generally perform better for both models [1] and [2].
 
 
 ## Evaluation
