@@ -24,8 +24,10 @@ Audio examples and further supplementary materials are available [on our project
 
 ## Pretrained checkpoints
 
-We provide pretrained checkpoints for the models trained on VoiceBank-DEMAND and WSJ0-CHiME3, as in the paper. They can be downloaded at https://drive.google.com/drive/folders/1CSnkhUSoiv3RG0xg7WEcVapyLuwDaLbe?usp=sharing.
+- For the Speech Enhancement task, we provide pretrained checkpoints for the models trained on VoiceBank-DEMAND and WSJ0-CHiME3, as in the paper. They can be downloaded [here](https://drive.google.com/drive/folders/1CSnkhUSoiv3RG0xg7WEcVapyLuwDaLbe?usp=sharing).
+- For the Dereverberation task, we provide a checkpoint trained on our WSJ0-REVERB dataset. It can be downloaded [here](https://drive.google.com/drive/folders/1082_PSEgrqoVVrNsAkSIcpLF1AAtzGwV?usp=sharing).
 
+Usage:
 - For resuming training, you can use the `--resume_from_checkpoint` option of `train.py`.
 - For evaluating these checkpoints, use the `--ckpt` option of `enhancement.py` (see section **Evaluation** below).
 
