@@ -52,7 +52,7 @@ class NCSNpp(nn.Module):
         resamp_with_conv = True,
         conditional = True,
         fir = True,
-        fir_kernel = 'song',
+        fir_kernel = [1, 3, 3, 1],
         skip_rescale = True,
         resblock_type = 'biggan',
         progressive = 'output_skip',
@@ -63,6 +63,7 @@ class NCSNpp(nn.Module):
         image_size = 256,
         embedding_type = 'fourier',
         dropout = .0,
+        centered = False,
         **unused_kwargs
     ):
         super().__init__()
@@ -78,9 +79,11 @@ class NCSNpp(nn.Module):
         self.all_resolutions = all_resolutions = [image_size // (2 ** i) for i in range(num_resolutions)]
 
         self.conditional = conditional = conditional  # noise-conditional
+        self.centered = centered
         self.scale_by_sigma = scale_by_sigma
+
         fir = fir
-        fir_kernel = [1, 3, 3, 1]
+        fir_kernel = fir_kernel
         self.skip_rescale = skip_rescale = skip_rescale
         self.resblock_type = resblock_type = resblock_type.lower()
         self.progressive = progressive = progressive.lower()
@@ -244,6 +247,11 @@ class NCSNpp(nn.Module):
 
         self.all_modules = nn.ModuleList(modules)
 
+    @staticmethod
+    def add_argparse_args(parser):
+        parser.add_argument("--centered", action="store_true", help="The data is already centered [-1, 1]")
+        return parser
+
     def forward(self, x, time_cond):
         # timestep/noise_level embedding; only for continuous training
         modules = self.all_modules
@@ -275,6 +283,10 @@ class NCSNpp(nn.Module):
             m_idx += 1
         else:
             temb = None
+
+        if not self.centered:
+            # If input data is in [0, 1]
+            x = 2 * x - 1.
 
         # Downsampling block
         input_pyramid = None
@@ -395,8 +407,9 @@ class NCSNpp(nn.Module):
             m_idx += 1
 
         assert m_idx == len(modules), "Implementation error"
-        used_sigmas = used_sigmas.reshape((x.shape[0], *([1] * len(x.shape[1:]))))
-        h = h / used_sigmas
+        if self.scale_by_sigma:
+            used_sigmas = used_sigmas.reshape((x.shape[0], *([1] * len(x.shape[1:]))))
+            h = h / used_sigmas
 
         # Convert back to complex number
         h = self.output_layer(h)
