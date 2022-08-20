@@ -9,6 +9,8 @@ This repository contains the official PyTorch implementations for the 2022 paper
 
 Audio examples and further supplementary materials are available [on our project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse).
 
+## Interspeech 2022
+Come talk to us at Interspeech 2022 in Incheon, Korea! We'll be at [the poster session Wed-P-OS-6-1](https://www.interspeech2022.org/program/), Wednesday 21.09.2022, 10:00-12:00.
 
 ## Installation
 
