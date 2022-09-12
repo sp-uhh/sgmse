@@ -74,6 +74,22 @@ Both scripts should receive the same `--test_dir` and `--enhanced_dir` parameter
 ## Citations / References
 
 We kindly ask you to cite our papers in your publication when using any of our research or code:
+```bib
+@inproceedings{welker2022speech,
+  title={Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain},
+  author={Welker, Simon and Richter, Julius and Gerkmann, Timo},
+  booktitle={Proc. Interspeech 2022},
+  year={2022}
+}
+```
+```bib
+@article{richter2022speech,
+  title={Speech Enhancement and Dereverberation with Diffusion-based Generative Models},
+  author={Richter, Julius and Welker, Simon and Lemercier, Jean-Marie and Lay, Bunlong and Gerkmann, Timo},
+  journal={arXiv preprint arXiv:2208.05830},
+  year={2022}
+}
+```
 
 >[1] Simon Welker, Julius Richter and Timo Gerkmann. "Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain", *ISCA Interspeech*, 2022.
 >
