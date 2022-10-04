@@ -73,7 +73,7 @@ if __name__ == '__main__':
                 ### Reverberant Room
                 e_absorption, max_order = pra.inverse_sabine(t60, room_dim) #Compute absorption coeff
                 reverberant_room = pra.ShoeBox(
-                    room_dim, fs=16000, materials=pra.Material(e_absorption), max_order=min(3, max_order), ray_tracing=True, air_absorption=True
+                    room_dim, fs=16000, materials=pra.Material(e_absorption), max_order=min(3, max_order)
                 ) # Create room
                 reverberant_room.set_ray_tracing()
                 reverberant_room.add_microphone_array(mic_array) # Add microphone array
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
             e_absorption_dry = 0.99 #For Neural Networks OK but clearly not for WPE
             dry_room = pra.ShoeBox(
-                room_dim, fs=16000, materials=pra.Material(e_absorption_dry), max_order=0, ray_tracing=True, air_absorption=True
+                room_dim, fs=16000, materials=pra.Material(e_absorption_dry), max_order=0
             ) # Create room
             dry_room.set_ray_tracing()
             dry_room.add_microphone_array(mic_array) # Add microphone array
