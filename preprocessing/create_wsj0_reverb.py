@@ -92,7 +92,6 @@ if __name__ == '__main__':
             dry_room = pra.ShoeBox(
                 room_dim, fs=16000, materials=pra.Material(e_absorption_dry), max_order=0
             ) # Create room
-            dry_room.set_ray_tracing()
             dry_room.add_microphone_array(mic_array) # Add microphone array
 
             # Generate dry room
