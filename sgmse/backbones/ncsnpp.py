@@ -63,7 +63,7 @@ class NCSNpp(nn.Module):
         image_size = 256,
         embedding_type = 'fourier',
         dropout = .0,
-        centered = False,
+        centered = True,
         **unused_kwargs
     ):
         super().__init__()
@@ -249,7 +249,9 @@ class NCSNpp(nn.Module):
 
     @staticmethod
     def add_argparse_args(parser):
-        parser.add_argument("--centered", action="store_true", help="The data is already centered [-1, 1]")
+        parser.add_argument("--no-centered", dest="centered", action="store_false", help="The data is not centered [-1, 1]")
+        parser.add_argument("--centered", dest="centered", action="store_true", help="The data is centered [-1, 1]")
+        parser.set_defaults(centered=True)
         return parser
 
     def forward(self, x, time_cond):
