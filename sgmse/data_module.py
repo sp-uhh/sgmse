@@ -22,7 +22,7 @@ def get_window(window_type, window_length):
 class Specs(Dataset):
     def __init__(self, data_dir, subset, dummy, shuffle_spec, num_frames,
             format='default', normalize="noisy", spec_transform=None,
-            stft_kwargs=None, **ignored_kwargs):
+            stft_kwargs=None, return_time=False, **ignored_kwargs):
 
         # Read file paths according to file naming format.
         if format == "default":
@@ -37,6 +37,7 @@ class Specs(Dataset):
         self.shuffle_spec = shuffle_spec
         self.normalize = normalize
         self.spec_transform = spec_transform
+        self.return_time = return_time
 
         assert all(k in stft_kwargs.keys() for k in ["n_fft", "hop_length", "center", "window"]), "misconfigured STFT kwargs"
         self.stft_kwargs = stft_kwargs
@@ -75,6 +76,9 @@ class Specs(Dataset):
         x = x / normfac
         y = y / normfac
 
+        if self.return_time:
+            return x, y
+
         X = torch.stft(x, **self.stft_kwargs)
         Y = torch.stft(y, **self.stft_kwargs)
 
@@ -105,13 +109,14 @@ class SpecsDataModule(pl.LightningDataModule):
         parser.add_argument("--spec_abs_exponent", type=float, default=0.5, help="Exponent e for the transformation abs(z)**e * exp(1j*angle(z)). 0.5 by default.")
         parser.add_argument("--normalize", type=str, choices=("clean", "noisy", "not"), default="noisy", help="Normalize the input waveforms by the clean signal, the noisy signal, or not at all.")
         parser.add_argument("--transform_type", type=str, choices=("exponent", "log", "none"), default="exponent", help="Spectogram transformation for input representation.")
+        parser.add_argument("--return_time", action="store_true", help="Return the waveform instead of the STFT")
         return parser
 
     def __init__(
         self, base_dir, format='default', batch_size=8,
         n_fft=510, hop_length=128, num_frames=256, window='hann',
         num_workers=4, dummy=False, spec_factor=0.15, spec_abs_exponent=0.5,
-        gpu=True, normalize='noisy', transform_type="exponent", **kwargs
+        gpu=True, normalize='noisy', transform_type="exponent", return_time=False, **kwargs
     ):
         super().__init__()
         self.base_dir = base_dir
@@ -129,6 +134,7 @@ class SpecsDataModule(pl.LightningDataModule):
         self.gpu = gpu
         self.normalize = normalize
         self.transform_type = transform_type
+        self.return_time = return_time
         self.kwargs = kwargs
 
     def setup(self, stage=None):
@@ -139,14 +145,14 @@ class SpecsDataModule(pl.LightningDataModule):
         if stage == 'fit' or stage is None:
             self.train_set = Specs(data_dir=self.base_dir, subset='train',
                 dummy=self.dummy, shuffle_spec=True, format=self.format,
-                normalize=self.normalize, **specs_kwargs)
+                return_time=self.return_time, **specs_kwargs)
             self.valid_set = Specs(data_dir=self.base_dir, subset='valid',
                 dummy=self.dummy, shuffle_spec=False, format=self.format,
-                normalize=self.normalize, **specs_kwargs)
+                return_time=self.return_time, **specs_kwargs)
         if stage == 'test' or stage is None:
             self.test_set = Specs(data_dir=self.base_dir, subset='test',
                 dummy=self.dummy, shuffle_spec=False, format=self.format,
-                normalize=self.normalize, **specs_kwargs)
+                return_time=self.return_time, **specs_kwargs)
 
     def spec_fwd(self, spec):
         if self.transform_type == "exponent":

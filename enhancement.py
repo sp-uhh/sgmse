@@ -1,13 +1,15 @@
 import glob
 from argparse import ArgumentParser
+import os
 from os.path import join
 
 import torch
-from soundfile import write
 from torchaudio import load
+from soundfile import write
 from tqdm import tqdm
+import numpy as np
 
-from sgmse.model import ScoreModel
+from sgmse.model import ScoreModel, DiscriminativeModel
 from sgmse.util.other import ensure_dir, pad_spec
 
 if __name__ == '__main__':
@@ -23,19 +25,17 @@ if __name__ == '__main__':
 
     noisy_dir = join(args.test_dir, 'noisy/')
     checkpoint_file = args.ckpt
-    corrector_cls = args.corrector
 
     target_dir = args.enhanced_dir
     ensure_dir(target_dir)
 
     # Settings
     sr = 16000
-    snr = args.snr
-    N = args.N
-    corrector_steps = args.corrector_steps
 
     # Load score model 
-    model = ScoreModel.load_from_checkpoint(checkpoint_file, base_dir='', batch_size=16, num_workers=0, kwargs=dict(gpu=False))
+    model_cls = ScoreModel if not args.discriminatively else DiscriminativeModel
+    model = model_cls.load_from_checkpoint(
+        args.ckpt, batch_size=1, num_workers=0)
     model.eval(no_ema=False)
     model.cuda()
 
@@ -45,28 +45,9 @@ if __name__ == '__main__':
         filename = noisy_file.split('/')[-1]
         
         # Load wav
-        y, _ = load(noisy_file) 
-        T_orig = y.size(1)   
-
-        # Normalize
-        norm_factor = y.abs().max()
-        y = y / norm_factor
+        y, sr = load(noisy_file) 
+        assert sr == 16000, "Pretrained models worked wth sampling rate of 16000"
+        x_hat = model.enhance(y, corrector=args.corrector, N=args.N, corrector_steps=args.corrector_steps, snr=args.snr)
         
-        # Prepare DNN input
-        Y = torch.unsqueeze(model._forward_transform(model._stft(y.cuda())), 0)
-        Y = pad_spec(Y)
-        
-        # Reverse sampling
-        sampler = model.get_pc_sampler(
-            'reverse_diffusion', corrector_cls, Y.cuda(), N=N, 
-            corrector_steps=corrector_steps, snr=snr)
-        sample, _ = sampler()
-        
-        # Backward transform in time domain
-        x_hat = model.to_audio(sample.squeeze(), T_orig)
-
-        # Renormalize
-        x_hat = x_hat * norm_factor
-
         # Write enhanced wav file
-        write(join(target_dir, filename), x_hat.cpu().numpy(), 16000)
+        write(f'{args.out_dir}/{os.path.basename(noisy_file)}', x_hat, 16000)

@@ -243,10 +243,55 @@ class ScoreModel(pl.LightningModule):
         sample, nfe = sampler()
         x_hat = self.to_audio(sample.squeeze(), T_orig)
         x_hat = x_hat * norm_factor
-        x_hat = x_hat.squeeze().cpu().numpy()
+        x_hat = x_hat.cpu().numpy()
         end = time.time()
         if timeit:
             rtf = (end-start)/(len(x_hat)/sr)
             return x_hat, nfe, rtf
+        else:
+            return x_hat
+
+
+
+
+
+class DiscriminativeModel(ScoreModel):
+
+    def forward(self, y):
+        t = torch.ones(y.shape[0], device=y.device)
+        return self.dnn(y, t)
+
+    def _step(self, batch, batch_idx):
+        X, Y = batch
+        Xhat = self(Y)
+        err = Xhat - X
+        loss = self._loss(err)
+        return loss
+
+    def enhance(self, y, timeit=False, **ignored_kwargs):
+        sr=16000
+        start = time.time()
+        norm_factor = y.abs().max().item()
+        T_orig = y.size(1)
+        y = y / norm_factor
+
+        if self.data_module.return_time:
+            Y = torch.unsqueeze(y.cuda(), 0) #1,D=1,T
+        else:
+            Y = torch.unsqueeze(self._forward_transform(self._stft(y.cuda())), 0) #1,D,F,T
+            Y = pad_spec(Y)
+        X_hat = self(Y)
+
+        if self.data_module.return_time:
+            x_hat = X_hat.squeeze()
+        else:
+            x_hat = self.to_audio(X_hat.squeeze(), T_orig)
+        x_hat = x_hat * norm_factor
+
+        x_hat = x_hat.cpu().numpy()
+        end = time.time()
+        if timeit:
+            rtf = (end-start)/(len(x_hat)/sr)
+            return x_hat, .0, rtf
         else:
             return x_hat

@@ -11,7 +11,7 @@ import wandb
 from sgmse.backbones.shared import BackboneRegistry
 from sgmse.data_module import SpecsDataModule
 from sgmse.sdes import SDERegistry
-from sgmse.model import ScoreModel
+from sgmse.model import ScoreModel, DiscriminativeModel
 
 
 def get_argparse_groups(parser):
@@ -30,6 +30,7 @@ if __name__ == '__main__':
           parser_.add_argument("--backbone", type=str, choices=BackboneRegistry.get_all_names(), default="ncsnpp")
           parser_.add_argument("--sde", type=str, choices=SDERegistry.get_all_names(), default="ouve")
           parser_.add_argument("--no_wandb", action='store_true', help="Turn off logging to W&B, using local default logger instead")
+          parser_.add_argument("--discriminatively", action="store_true", help="Train the backbone as a discriminative model instead")
           
      temp_args, _ = base_parser.parse_known_args()
 
@@ -52,13 +53,15 @@ if __name__ == '__main__':
      arg_groups = get_argparse_groups(parser)
 
      # Initialize logger, trainer, model, datamodule
-     model = ScoreModel(
+     model_cls = ScoreModel if not temp_args.discriminatively else DiscriminativeModel
+     model = model_cls(
           backbone=args.backbone, sde=args.sde, data_module_cls=data_module_cls,
           **{
                **vars(arg_groups['ScoreModel']),
                **vars(arg_groups['SDE']),
                **vars(arg_groups['Backbone']),
-               **vars(arg_groups['DataModule'])
+               **vars(arg_groups['DataModule']),
+               "discriminative": temp_args.discriminatively
           }
      )
 
@@ -81,7 +84,7 @@ if __name__ == '__main__':
      # Initialize the Trainer and the DataModule
      trainer = pl.Trainer.from_argparse_args(
           arg_groups['pl.Trainer'],
-          strategy=DDPPlugin(find_unused_parameters=False), logger=logger,
+          strategy=DDPPlugin(find_unused_parameters=args.discriminatively), logger=logger,
           log_every_n_steps=10, num_sanity_val_steps=0,
           callbacks=callbacks
      )
