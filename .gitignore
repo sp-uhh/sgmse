@@ -331,4 +331,4 @@ $RECYCLE.BIN/
 ## Logs from W&B and PyTorch Lightning
 /wandb
 /lightning_logs
-/logs
+/logs.environment/
