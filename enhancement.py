@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from os.path import join
 
 import torch
+import torchaudio
 from soundfile import write
 from torchaudio import load
 from tqdm import tqdm
@@ -45,7 +46,8 @@ if __name__ == '__main__':
         filename = noisy_file.split('/')[-1]
         
         # Load wav
-        y, _ = load(noisy_file) 
+        y, loading_sr = load(noisy_file)
+        y = torchaudio.functional.resample(y, orig_freq=loading_sr, new_freq=sr)
         T_orig = y.size(1)   
 
         # Normalize
