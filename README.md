@@ -92,7 +92,7 @@ We kindly ask you to cite our papers in your publication when using any of our r
 ```bib
 @inproceedings{lemercier2023analysing,
   title={Analysing Diffusion-based Generative Approaches versus Discriminative Approaches for Speech Restoration},
-  author{Lemercier, Jean-Marie and Richter, Julius and Welker, Simon and Gerkmann, Timo},
+  author={Lemercier, Jean-Marie and Richter, Julius and Welker, Simon and Gerkmann, Timo},
   booktitle={Proc. ICASSP},
   year={2023}
 }
