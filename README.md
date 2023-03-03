@@ -6,8 +6,9 @@ This repository contains the official PyTorch implementations for the 2022 paper
 
 - [*Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain*](https://arxiv.org/abs/2203.17004), 2022 [1]
 - [*Speech Enhancement and Dereverberation with Diffusion-Based Generative Models*](https://arxiv.org/abs/2208.05830), 2022 [2]
+- [*Analysing Diffusion-based Generative Approaches versus Discriminative Approaches for Speech Restoration*](https://arxiv.org/abs/2211.02397), 2023 [3]
 
-Audio examples and further supplementary materials are available [on our project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse).
+Audio examples and further supplementary materials are available on [our original project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse) [1,2] and [our ICASSP project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse-multitask) [3].
 
 ## Installation
 
@@ -23,9 +24,10 @@ Audio examples and further supplementary materials are available [on our project
 
 ## Pretrained checkpoints
 
-- For the Speech Enhancement task, we provide pretrained checkpoints for the models trained on VoiceBank-DEMAND and WSJ0-CHiME3, as in the paper. They can be downloaded [here](https://drive.google.com/drive/folders/1CSnkhUSoiv3RG0xg7WEcVapyLuwDaLbe?usp=sharing).
-- For the Dereverberation task, we provide a checkpoint trained on our WSJ0-REVERB dataset. It can be downloaded [here](https://drive.google.com/drive/folders/1082_PSEgrqoVVrNsAkSIcpLF1AAtzGwV?usp=sharing).
+- For the Speech Enhancement task in [1,2], we provide pretrained checkpoints for the models trained on VoiceBank-DEMAND and WSJ0-CHiME3, as in the papers. They can be downloaded [here](https://drive.google.com/drive/folders/1CSnkhUSoiv3RG0xg7WEcVapyLuwDaLbe?usp=sharing).
+- For the Dereverberation task in [2], we provide a checkpoint trained on our WSJ0-REVERB dataset. It can be downloaded [here](https://drive.google.com/drive/folders/1082_PSEgrqoVVrNsAkSIcpLF1AAtzGwV?usp=sharing).
     - Note that this checkpoint works better with sampler settings `--N 50 --snr 0.33`.
+- For the Enhancement, Dereverberation and Bandwidth Extension Task in [3], the checkpoints are available [here](https://drive.google.com/drive/folders/1ExFm97obaXTYFoBApWjbK_ypxTP-Cgdq?usp=sharing) along the StoRM checkpoints (see [our new arXiv preprint](https://arxiv.org/abs/2212.11851))
 
 Usage:
 - For resuming training, you can use the `--resume_from_checkpoint` option of `train.py`.
@@ -45,7 +47,7 @@ where `your_base_dir` should be a path to a folder containing subdirectories `tr
 To see all available training options, run `python train.py --help`. Note that the available options for the SDE and the backbone network change depending on which SDE and backbone you use. These can be set through the `--sde` and `--backbone` options.
 
 **Note:**
-- Our journal preprint [2] uses `--backbone ncsnpp`.
+- Our journal preprint [2] and our ICASSP paper [3] use `--backbone ncsnpp`.
 - Our Interspeech paper [1] uses `--backbone dcunet`. You need to pass `--n_fft 512` to make it work.
     - Also note that the default parameters for the spectrogram transformation in this repository are slightly different from the ones listed in the first (Interspeech) paper (`--spec_factor 0.15` rather than `--spec_factor 0.333`), but we've found the value in this repository to generally perform better for both models [1] and [2].
 
@@ -87,9 +89,19 @@ We kindly ask you to cite our papers in your publication when using any of our r
   year={2022}
 }
 ```
+```bib
+@inproceedings{lemercier2023analysing,
+  title={Analysing Diffusion-based Generative Approaches versus Discriminative Approaches for Speech Restoration},
+  author{Lemercier, Jean-Marie and Richter, Julius and Welker, Simon and Gerkmann, Timo},
+  journal={Proc. ICASSP},
+  year={2023}
+}
+```
 
 >[1] Simon Welker, Julius Richter and Timo Gerkmann. "Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain", *ISCA Interspeech*, 2022.
 >
 >[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay and Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", *arXiv preprint arXiv:2208.05830*, 2022.
+>
+>[3] Jean-Marie Lemercier, Julius Richter, Simon Welker and Timo Gerkmann. "Analysing Diffusion-based Generative Approaches versus Discriminative Approaches for Speech Restoration", *ICASSP*, 2023.
 
 The paper [2] has been submitted to a journal and is currently under review. The appropriate citation for it may therefore change in the future.
