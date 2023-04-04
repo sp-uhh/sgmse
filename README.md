@@ -72,11 +72,13 @@ Both scripts should receive the same `--test_dir` and `--enhanced_dir` parameter
 
 We kindly ask you to cite our papers in your publication when using any of our research or code:
 ```bib
-@inproceedings{welker2022speech,
-  title={Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain},
-  author={Welker, Simon and Richter, Julius and Gerkmann, Timo},
+@inproceedings{welker22speech,
+  author={Simon Welker and Julius Richter and Timo Gerkmann},
+  title={Speech Enhancement with Score-Based Generative Models in the Complex {STFT} Domain},
+  year={2022},
   booktitle={Proc. Interspeech 2022},
-  year={2022}
+  pages={2928--2932},
+  doi={10.21437/Interspeech.2022-10653}
 }
 ```
 ```bib
@@ -88,8 +90,8 @@ We kindly ask you to cite our papers in your publication when using any of our r
 }
 ```
 
->[1] Simon Welker, Julius Richter and Timo Gerkmann. "Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain", *ISCA Interspeech*, 2022.
+>[1] Simon Welker, Julius Richter, Timo Gerkmann. "Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain", ISCA Interspeech, Incheon, Korea, Sep. 2022.
 >
->[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay and Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", *arXiv preprint arXiv:2208.05830*, 2022.
+>[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", *arXiv preprint arXiv:2208.05830*, 2022.
 
 The paper [2] has been submitted to a journal and is currently under review. The appropriate citation for it may therefore change in the future.
