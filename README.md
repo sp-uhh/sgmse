@@ -5,7 +5,7 @@
 This repository contains the official PyTorch implementations for the 2022 papers:
 
 - Simon Welker, Julius Richter, Timo Gerkmann. [*"Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain"*](https://www.isca-speech.org/archive/interspeech_2022/welker22_interspeech.html), ISCA Interspeech, Incheon, Korea, Sep. 2022. [[bibtex]](#citations--references)
-- Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. [*"Speech Enhancement and Dereverberation with Diffusion-Based Generative Models"*](https://arxiv.org/abs/2208.05830), *arXiv preprint arXiv:2208.05830*, 2022. [[bibtex]](#citations--references)
+- Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. [*"Speech Enhancement and Dereverberation with Diffusion-Based Generative Models"*](https://arxiv.org/abs/2208.05830), IEEE/ACM Trans. Audio, Speech, Language Proc., 2023, accepted. [[bibtex]](#citations--references)
 
 Audio examples and further supplementary materials are available [on our project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse).
 
@@ -92,6 +92,4 @@ We kindly ask you to cite our papers in your publication when using any of our r
 
 >[1] Simon Welker, Julius Richter, Timo Gerkmann. "Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain", ISCA Interspeech, Incheon, Korea, Sep. 2022.
 >
->[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", *arXiv preprint arXiv:2208.05830*, 2022.
-
-The paper [2] has been submitted to a journal and is currently under review. The appropriate citation for it may therefore change in the future.
+>[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", IEEE/ACM Trans. Audio, Speech, Language Proc., 2023, accepted.
