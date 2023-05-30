@@ -13,8 +13,8 @@ Audio examples and further supplementary materials are available [on our project
 
 Please also check out our follow-up work with code available: 
 
-- Jean-Marie Lemercier, Julius Richter, Simon Welker, Timo Gerkmann, [*"StoRM: A Diffusion-based Stochastic Regeneration Model for Speech Enhancement and Dereverberation"](https://arxiv.org/abs/2212.11851), submitted to IEEE/ACM Trans. on Audio, Speech, Language Proc. (TASLP). [[code]](https://github.com/sp-uhh/storm)
-- Bunlong Lay, Simon Welker, Julius Richter, Timo Gerkmann [*"Reducing the Prior Mismatch of Stochastic Differential Equations for Diffusion-based Speech Enhancement"](https://arxiv.org/abs/2302.14748), ISCA Interspeech, Dublin, Ireland, Aug. 2023 [[code]](https://github.com/sp-uhh/sgmse-bbed)
+- Jean-Marie Lemercier, Julius Richter, Simon Welker, Timo Gerkmann, [*"StoRM: A Diffusion-based Stochastic Regeneration Model for Speech Enhancement and Dereverberation"*](https://arxiv.org/abs/2212.11851), submitted to IEEE/ACM Trans. on Audio, Speech, Language Proc. (TASLP). [[code]](https://github.com/sp-uhh/storm)
+- Bunlong Lay, Simon Welker, Julius Richter, Timo Gerkmann [*"Reducing the Prior Mismatch of Stochastic Differential Equations for Diffusion-based Speech Enhancement"*](https://arxiv.org/abs/2302.14748), ISCA Interspeech, Dublin, Ireland, Aug. 2023 [[code]](https://github.com/sp-uhh/sgmse-bbed)
 
 ## Installation
 
