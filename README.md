@@ -5,7 +5,7 @@
 This repository contains the official PyTorch implementations for the 2022 papers:
 
 - Simon Welker, Julius Richter, Timo Gerkmann. [*"Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain"*](https://www.isca-speech.org/archive/interspeech_2022/welker22_interspeech.html), ISCA Interspeech, Incheon, Korea, Sep. 2022. [[bibtex]](#citations--references)
-- Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. [*"Speech Enhancement and Dereverberation with Diffusion-Based Generative Models"*](https://arxiv.org/abs/2208.05830), IEEE/ACM Trans. Audio, Speech, Language Proc., 2023, accepted. [[bibtex]](#citations--references)
+- Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. [*"Speech Enhancement and Dereverberation with Diffusion-Based Generative Models"*](https://arxiv.org/abs/2208.05830), IEEE/ACM Transactions on Audio, Speech, and Language Processing, doi: 10.1109/TASLP.2023.3285241.2023, 2023. [[bibtex]](#citations--references)
 
 Audio examples and further supplementary materials are available [on our project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse).
 
@@ -14,7 +14,7 @@ Audio examples and further supplementary materials are available [on our project
 Please also check out our follow-up work with code available: 
 
 - Jean-Marie Lemercier, Julius Richter, Simon Welker, Timo Gerkmann. [*"StoRM: A Diffusion-based Stochastic Regeneration Model for Speech Enhancement and Dereverberation"*](https://arxiv.org/abs/2212.11851), submitted to IEEE/ACM Trans. on Audio, Speech, Language Proc. (TASLP). [[github]](https://github.com/sp-uhh/storm)
-- Bunlong Lay, Simon Welker, Julius Richter, Timo Gerkmann. [*"Reducing the Prior Mismatch of Stochastic Differential Equations for Diffusion-based Speech Enhancement"*](https://arxiv.org/abs/2302.14748), ISCA Interspeech, Dublin, Ireland, Aug. 2023 [[github]](https://github.com/sp-uhh/sgmse-bbed)
+- Bunlong Lay, Simon Welker, Julius Richter, Timo Gerkmann. [*"Reducing the Prior Mismatch of Stochastic Differential Equations for Diffusion-based Speech Enhancement"*](https://arxiv.org/abs/2302.14748), ISCA Interspeech, Dublin, Ireland, Aug. 2023. [[github]](https://github.com/sp-uhh/sgmse-bbed)
 
 ## Installation
 
@@ -89,14 +89,16 @@ We kindly ask you to cite our papers in your publication when using any of our r
 }
 ```
 ```bib
-@article{richter2022speech,
+@article{richter2023speech,
   title={Speech Enhancement and Dereverberation with Diffusion-based Generative Models},
   author={Richter, Julius and Welker, Simon and Lemercier, Jean-Marie and Lay, Bunlong and Gerkmann, Timo},
-  journal={arXiv preprint arXiv:2208.05830},
-  year={2022}
+  year={2023},
+  journal={IEEE/ACM Transactions on Audio, Speech, and Language Processing},
+  pages={1-13},
+  doi={10.1109/TASLP.2023.3285241}
 }
 ```
 
 >[1] Simon Welker, Julius Richter, Timo Gerkmann. "Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain", ISCA Interspeech, Incheon, Korea, Sep. 2022.
 >
->[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", IEEE/ACM Trans. Audio, Speech, Language Proc., 2023, accepted.
+>[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", IEEE/ACM Transactions on Audio, Speech, and Language Processing, doi: 10.1109/TASLP.2023.3285241.2023, 2023.
