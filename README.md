@@ -5,7 +5,7 @@
 This repository contains the official PyTorch implementations for the 2022 papers:
 
 - Simon Welker, Julius Richter, Timo Gerkmann. [*"Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain"*](https://www.isca-speech.org/archive/interspeech_2022/welker22_interspeech.html), ISCA Interspeech, Incheon, Korea, Sep. 2022. [[bibtex]](#citations--references)
-- Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. [*"Speech Enhancement and Dereverberation with Diffusion-Based Generative Models"*](https://arxiv.org/abs/2208.05830), IEEE/ACM Transactions on Audio, Speech, and Language Processing, doi: 10.1109/TASLP.2023.3285241.2023, 2023. [[bibtex]](#citations--references)
+- Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. [*"Speech Enhancement and Dereverberation with Diffusion-Based Generative Models"*](https://ieeexplore.ieee.org/abstract/document/10149431), IEEE/ACM Transactions on Audio, Speech, and Language Processing, vol. 31, pp. 2351-2364, 2023. [[bibtex]](#citations--references)
 
 Audio examples and further supplementary materials are available [on our project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse).
 
@@ -92,13 +92,14 @@ We kindly ask you to cite our papers in your publication when using any of our r
 @article{richter2023speech,
   title={Speech Enhancement and Dereverberation with Diffusion-based Generative Models},
   author={Richter, Julius and Welker, Simon and Lemercier, Jean-Marie and Lay, Bunlong and Gerkmann, Timo},
-  year={2023},
   journal={IEEE/ACM Transactions on Audio, Speech, and Language Processing},
-  pages={1-13},
+  volume={31},
+  pages={2351-2364},
+  year={2023},
   doi={10.1109/TASLP.2023.3285241}
 }
 ```
 
 >[1] Simon Welker, Julius Richter, Timo Gerkmann. "Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain", ISCA Interspeech, Incheon, Korea, Sep. 2022.
 >
->[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", IEEE/ACM Transactions on Audio, Speech, and Language Processing, doi: 10.1109/TASLP.2023.3285241.2023, 2023.
+>[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", IEEE/ACM Transactions on Audio, Speech, and Language Processing, vol. 31, pp. 2351-2364, 2023.
