@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     splits = ['valid', 'train', 'test']
     dic_split = {"valid": "si_dt_05", "train": "si_tr_s", "test": "si_et_05"}
-    speech_lists = {split:glob(f"{os.path.join(args.wsj0_dir, dic_split[split])}/**/*.wav") for split in splits}
+    speech_lists = {split:sorted(glob(f"{os.path.join(args.wsj0_dir, dic_split[split])}/**/*.wav")) for split in splits}
     sample_rate = 16000
     output_dir = args.target_dir
 
