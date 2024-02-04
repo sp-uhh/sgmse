@@ -20,12 +20,13 @@ Please also check out our follow-up work with code available:
 
 - Create a new virtual environment with Python 3.8 (we have not tested other Python versions, but they may work).
 - Install the package dependencies via `pip install -r requirements.txt`.
+  - Let pip resolve the dependencies for you. If you encounter any issues, please check `requirements_version.txt` for the exact versions we used.
 - If using W&B logging (default):
     - Set up a [wandb.ai](https://wandb.ai/) account
     - Log in via `wandb login` before running our code.
 - If not using W&B logging:
-    - Pass the option `--no_wandb` to `train.py`.
-    - Your logs will be stored as local TensorBoard logs. Run `tensorboard --logdir logs/` to see them.
+    - Pass the option `--nolog` to `train.py`.
+    - Your logs will be stored as local CSVLogger logs in `lightning_logs/`.
 
 
 ## Pretrained checkpoints
@@ -35,7 +36,7 @@ Please also check out our follow-up work with code available:
     - Note that this checkpoint works better with sampler settings `--N 50 --snr 0.33`.
 
 Usage:
-- For resuming training, you can use the `--resume_from_checkpoint` option of `train.py`.
+- For resuming training, you can use the `--ckpt` option of `train.py`.
 - For evaluating these checkpoints, use the `--ckpt` option of `enhancement.py` (see section **Evaluation** below).
 
 
