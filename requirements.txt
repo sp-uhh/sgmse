@@ -23,3 +23,5 @@ torchinfo
 torchsde 
 tqdm 
 wandb
+# for Tsubame
+psutil
