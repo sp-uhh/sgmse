@@ -327,6 +327,8 @@ $RECYCLE.BIN/
 
 
 # Custom ignores:
+WSJ0_C3
+_*
 
 ## Logs from W&B and PyTorch Lightning
 /wandb
