@@ -80,15 +80,21 @@ def snr_dB(s,n):
     snr_dB = 10*np.log10(s_power/n_power)
     return snr_dB
 
-def pad_spec(Y):
+def pad_spec(Y, mode="zero_pad"):
     T = Y.size(3)
     if T%64 !=0:
         num_pad = 64-T%64
     else:
         num_pad = 0
-    pad2d = torch.nn.ZeroPad2d((0, num_pad, 0,0))
+    if mode == "zero_pad":
+        pad2d = torch.nn.ZeroPad2d((0, num_pad, 0,0))
+    elif mode == "reflection":
+        pad2d = torch.nn.ReflectionPad2d((0, num_pad, 0,0))
+    elif mode == "replication":
+        pad2d = torch.nn.ReplicationPad2d((0, num_pad, 0,0))
+    else:
+        raise NotImplementedError("This function hasn't been implemented yet.")
     return pad2d(Y)
-
 
 def ensure_dir(file_path):
     directory = file_path

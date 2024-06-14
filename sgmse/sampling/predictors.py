@@ -57,8 +57,8 @@ class ReverseDiffusionPredictor(Predictor):
     def __init__(self, sde, score_fn, probability_flow=False):
         super().__init__(sde, score_fn, probability_flow=probability_flow)
 
-    def update_fn(self, x, t, *args):
-        f, g = self.rsde.discretize(x, t, *args)
+    def update_fn(self, x, t, y, stepsize):
+        f, g = self.rsde.discretize(x, t, y, stepsize)
         z = torch.randn_like(x)
         x_mean = x - f
         x = x_mean + g[:, None, None, None] * z

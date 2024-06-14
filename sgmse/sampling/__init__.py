@@ -56,9 +56,13 @@ def get_pc_sampler(
             timesteps = torch.linspace(sde.T, eps, sde.N, device=y.device)
             for i in range(sde.N):
                 t = timesteps[i]
+                if i != len(timesteps) - 1:
+                    stepsize = t - timesteps[i+1]
+                else:
+                    stepsize = timesteps[-1] # from eps to 0
                 vec_t = torch.ones(y.shape[0], device=y.device) * t
                 xt, xt_mean = corrector.update_fn(xt, vec_t, y)
-                xt, xt_mean = predictor.update_fn(xt, vec_t, y)
+                xt, xt_mean = predictor.update_fn(xt, vec_t, y, stepsize)
             x_result = xt_mean if denoise else xt
             ns = sde.N * (corrector.n_steps + 1)
             return x_result, ns

@@ -69,7 +69,7 @@ class SDE(abc.ABC):
         """
         pass
 
-    def discretize(self, x, t, *args):
+    def discretize(self, x, t, y, stepsize):
         """Discretize the SDE in the form: x_{i+1} = x_i + f_i(x_i) + G_i z_i.
 
         Useful for reverse diffusion sampling and probabiliy flow sampling.
@@ -82,10 +82,10 @@ class SDE(abc.ABC):
         Returns:
             f, G
         """
-        dt = 1 / self.N
-        drift, diffusion = self.sde(x, t, *args)
+        dt = stepsize
+        drift, diffusion = self.sde(x, t, y)
         f = drift * dt
-        G = diffusion * torch.sqrt(torch.tensor(dt, device=t.device))
+        G = diffusion * torch.sqrt(dt)
         return f, G
 
     def reverse(oself, score_model, probability_flow=False):
@@ -127,10 +127,10 @@ class SDE(abc.ABC):
                     'sde_diffusion': sde_diffusion, 'score_drift': score_drift, 'score': score,
                 }
 
-            def discretize(self, x, t, *args):
+            def discretize(self, x, t, y, stepsize):
                 """Create discretized iteration rules for the reverse diffusion sampler."""
-                f, G = discretize_fn(x, t, *args)
-                rev_f = f - G[:, None, None, None] ** 2 * score_model(x, t, *args) * (0.5 if self.probability_flow else 1.)
+                f, G = discretize_fn(x, t, y, stepsize)
+                rev_f = f - G[:, None, None, None] ** 2 * score_model(x, t, y) * (0.5 if self.probability_flow else 1.)
                 rev_G = torch.zeros_like(G) if self.probability_flow else G
                 return rev_f, rev_G
 
@@ -197,6 +197,9 @@ class OUVESDE(SDE):
         theta = self.theta
         exp_interp = torch.exp(-theta * t)[:, None, None, None]
         return exp_interp * x0 + (1 - exp_interp) * y
+
+    def alpha(self, t):
+        return torch.exp(-self.theta * t)
 
     def _std(self, t):
         # This is a full solution to the ODE for P(t) in our derivations, after choosing g(s) as in self.sde()

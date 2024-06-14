@@ -1,12 +1,11 @@
 import glob
-from argparse import ArgumentParser
-from os.path import join
-
 import torch
+from os import makedirs
+from os.path import join, dirname
+from argparse import ArgumentParser
 from soundfile import write
 from torchaudio import load
 from tqdm import tqdm
-
 from sgmse.model import ScoreModel
 from sgmse.util.other import ensure_dir, pad_spec
 
@@ -19,6 +18,7 @@ if __name__ == '__main__':
     parser.add_argument("--corrector_steps", type=int, default=1, help="Number of corrector steps")
     parser.add_argument("--snr", type=float, default=0.5, help="SNR value for (annealed) Langevin dynmaics.")
     parser.add_argument("--N", type=int, default=30, help="Number of reverse steps")
+    parser.add_argument("--format", type=str, default='default', help='Format of the directory structure. Use "default" for the default format and "ears" for the EARS format.')
     args = parser.parse_args()
 
     noisy_dir = join(args.test_dir, 'noisy/')
@@ -29,7 +29,6 @@ if __name__ == '__main__':
     ensure_dir(target_dir)
 
     # Settings
-    sr = 16000
     snr = args.snr
     N = args.N
     corrector_steps = args.corrector_steps
@@ -39,10 +38,21 @@ if __name__ == '__main__':
     model.eval(no_ema=False)
     model.cuda()
 
-    noisy_files = sorted(glob.glob('{}/*.wav'.format(noisy_dir)))
+    # Check format
+    if args.format == 'default':
+        noisy_files = sorted(glob.glob(join(noisy_dir, '*.wav')))
+        sr = 16000
+        pad_mode = "zero_pad"
+    elif args.format == 'ears':
+        noisy_files = sorted(glob.glob(join(noisy_dir, '**', '*.wav')))
+        sr = 48000
+        pad_mode = "reflection"
+    else:
+        raise ValueError('Unknown format')
 
     for noisy_file in tqdm(noisy_files):
         filename = noisy_file.split('/')[-1]
+        filename = noisy_file.replace(noisy_dir, "")[1:] # Remove the first character which is a slash
         
         # Load wav
         y, _ = load(noisy_file) 
@@ -54,7 +64,7 @@ if __name__ == '__main__':
         
         # Prepare DNN input
         Y = torch.unsqueeze(model._forward_transform(model._stft(y.cuda())), 0)
-        Y = pad_spec(Y)
+        Y = pad_spec(Y, mode=pad_mode)
         
         # Reverse sampling
         sampler = model.get_pc_sampler(
@@ -69,4 +79,5 @@ if __name__ == '__main__':
         x_hat = x_hat * norm_factor
 
         # Write enhanced wav file
-        write(join(target_dir, filename), x_hat.cpu().numpy(), 16000)
+        makedirs(dirname(join(target_dir, filename)), exist_ok=True)
+        write(join(target_dir, filename), x_hat.cpu().numpy(), sr)
