@@ -2,12 +2,13 @@
 
 <img src="https://raw.githubusercontent.com/sp-uhh/sgmse/main/diffusion_process.png" width="500" alt="Diffusion process on a spectrogram: In the forward process noise is gradually added to the clean speech spectrogram x0, while the reverse process learns to generate clean speech in an iterative fashion starting from the corrupted signal xT.">
 
-This repository contains the official PyTorch implementations for the 2022 papers:
+This repository contains the official PyTorch implementations for the papers:
 
 - Simon Welker, Julius Richter, Timo Gerkmann. [*"Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain"*](https://www.isca-speech.org/archive/interspeech_2022/welker22_interspeech.html), ISCA Interspeech, Incheon, Korea, Sep. 2022. [[bibtex]](#citations--references)
 - Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. [*"Speech Enhancement and Dereverberation with Diffusion-Based Generative Models"*](https://ieeexplore.ieee.org/abstract/document/10149431), IEEE/ACM Transactions on Audio, Speech, and Language Processing, vol. 31, pp. 2351-2364, 2023. [[bibtex]](#citations--references)
+- Julius Richter, Yi-Chiao Wu, Steven Krenn, Simon Welker, Bunlong Lay, Shinji Watanabe, Alexander Richard, Timo Gerkmann. [*"EARS: An Anechoic Fullband Speech Dataset Benchmarked for Speech Enhancement and Dereverberation"*](https://arxiv.org/abs/2406.06185), ISCA Interspecch, Kos, Greece, 2024. [[bibtex]](#citations--references)
 
-Audio examples and further supplementary materials are available [on our project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse).
+Audio examples and further supplementary materials are available on our [SGMSE project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse) and [EARS project page](https://sp-uhh.github.io/ears_dataset/) 
 
 ## Follow-up work
 
@@ -18,7 +19,7 @@ Please also check out our follow-up work with code available:
 
 ## Installation
 
-- Create a new virtual environment with Python 3.8 (we have not tested other Python versions, but they may work).
+- Create a new virtual environment with Python 3.11 (we have not tested other Python versions, but they may work).
 - Install the package dependencies via `pip install -r requirements.txt`.
   - Let pip resolve the dependencies for you. If you encounter any issues, please check `requirements_version.txt` for the exact versions we used.
 - If using W&B logging (default):
@@ -31,9 +32,10 @@ Please also check out our follow-up work with code available:
 
 ## Pretrained checkpoints
 
-- For the Speech Enhancement task, we provide pretrained checkpoints for the models trained on VoiceBank-DEMAND and WSJ0-CHiME3, as in the paper. They can be downloaded [here](https://drive.google.com/drive/folders/1CSnkhUSoiv3RG0xg7WEcVapyLuwDaLbe?usp=sharing).
-- For the Dereverberation task, we provide a checkpoint trained on our WSJ0-REVERB dataset. It can be downloaded [here](https://drive.google.com/drive/folders/1082_PSEgrqoVVrNsAkSIcpLF1AAtzGwV?usp=sharing).
+- For the speech enhancement task, we provide pretrained checkpoints for the models trained on VoiceBank-DEMAND and WSJ0-CHiME3, as in the paper. They can be downloaded [here](https://drive.google.com/drive/folders/1CSnkhUSoiv3RG0xg7WEcVapyLuwDaLbe?usp=sharing).
+- For the dereverberation task, we provide a checkpoint trained on our WSJ0-REVERB dataset. It can be downloaded [here](https://drive.google.com/drive/folders/1082_PSEgrqoVVrNsAkSIcpLF1AAtzGwV?usp=sharing).
     - Note that this checkpoint works better with sampler settings `--N 50 --snr 0.33`.
+- For 48 kHz models, we provide pretrained checkpoints for the speech enhancement trained on EARS-WHAM and for dereverberation on EARS-Reverb. They can be downloaded [here](https://drive.google.com/drive/folders/1Tn6pVwjxUAy1DJ8167JCg3enuSi0hiw5?usp=sharing).
 
 Usage:
 - For resuming training, you can use the `--ckpt` option of `train.py`.
@@ -100,7 +102,17 @@ We kindly ask you to cite our papers in your publication when using any of our r
   doi={10.1109/TASLP.2023.3285241}
 }
 ```
+```bib
+@inproceedings{richter2024ears,
+  title={{EARS}: An Anechoic Fullband Speech Dataset Benchmarked for Speech Enhancement and Dereverberation},
+  author={Richter, Julius and Wu, Yi-Chiao and Krenn, Steven and Welker, Simon and Lay, Bunlong and Watanabe, Shinjii and Richard, Alexander and Gerkmann, Timo},
+  booktitle={ISCA Interspeech},
+  year={2024}
+}
+```
 
 >[1] Simon Welker, Julius Richter, Timo Gerkmann. "Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain", ISCA Interspeech, Incheon, Korea, Sep. 2022.
 >
 >[2] Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann. "Speech Enhancement and Dereverberation with Diffusion-Based Generative Models", IEEE/ACM Transactions on Audio, Speech, and Language Processing, vol. 31, pp. 2351-2364, 2023.
+>
+>[3] Julius Richter, Yi-Chiao Wu, Steven Krenn, Simon Welker, Bunlong Lay, Shinji Watanabe, Alexander Richard, Timo Gerkmann. "EARS: An Anechoic Fullband Speech Dataset Benchmarked for Speech Enhancement and Dereverberation", ISCA Interspeech, Kos, Greece, 2024.
