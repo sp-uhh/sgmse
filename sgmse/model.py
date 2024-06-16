@@ -40,6 +40,7 @@ class ScoreModel(pl.LightningModule):
         """
         super().__init__()
         # Initialize Backbone DNN
+        self.backbone = backbone
         dnn_cls = BackboneRegistry.get_by_name(backbone)
         self.dnn = dnn_cls(**kwargs)
         # Initialize SDE
