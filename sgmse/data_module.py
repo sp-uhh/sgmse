@@ -26,11 +26,19 @@ class Specs(Dataset):
 
         # Read file paths according to file naming format.
         if format == "default":
-            self.clean_files = sorted(glob(join(data_dir, subset) + '/clean/*.wav'))
-            self.noisy_files = sorted(glob(join(data_dir, subset) + '/noisy/*.wav'))
+            self.clean_files = []
+            self.clean_files += sorted(glob(join(data_dir, subset, "clean", "*.wav")))
+            self.clean_files += sorted(glob(join(data_dir, subset, "clean", "**", "*.wav")))
+            self.noisy_files = []
+            self.noisy_files += sorted(glob(join(data_dir, subset, "noisy", "*.wav")))
+            self.noisy_files += sorted(glob(join(data_dir, subset, "noisy", "**", "*.wav")))
         elif format == "reverb":
-            self.clean_files = sorted(glob(join(data_dir, subset) + '/anechoic/*.wav'))
-            self.noisy_files = sorted(glob(join(data_dir, subset) + '/reverb/*.wav'))
+            self.clean_files = []
+            self.clean_files += sorted(glob(join(data_dir, subset, "anechoic", "*.wav")))
+            self.clean_files += sorted(glob(join(data_dir, subset, "anechoic", "**", "*.wav")))
+            self.noisy_files = []
+            self.noisy_files += sorted(glob(join(data_dir, subset, "reverb", "*.wav")))
+            self.noisy_files += sorted(glob(join(data_dir, subset, "reverb", "**", "*.wav")))
         else:
             # Feel free to add your own directory format
             raise NotImplementedError(f"Directory format {format} unknown!")
