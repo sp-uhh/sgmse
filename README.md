@@ -39,7 +39,7 @@ Please also check out our follow-up work with code available:
     - Note that this checkpoint works better with sampler settings `--N 50 --snr 0.33`.
 - For 48 kHz models [3], we offer pretrained checkpoints for speech enhancement, trained on the EARS-WHAM dataset, and for dereverberation, trained on the EARS-Reverb dataset. You can download them [here](https://drive.google.com/drive/folders/1Tn6pVwjxUAy1DJ8167JCg3enuSi0hiw5?usp=sharing).
     - SGMSE+ trained on EARS-WHAM: `gdown 1t_DLLk8iPH6nj8M5wGeOP3jFPaz3i7K5`
-    - SGMSE+ trained on EARS-Reverb: `1PunXuLbuyGkknQCn_y-RCV2dTZBhyE3V`
+    - SGMSE+ trained on EARS-Reverb: `gdown 1PunXuLbuyGkknQCn_y-RCV2dTZBhyE3V`
 
 Usage:
 - For resuming training, you can use the `--ckpt` option of `train.py`.
