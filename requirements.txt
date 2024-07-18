@@ -3,7 +3,7 @@ h5py
 ipympl 
 librosa 
 ninja 
-numpy
+numpy<2.0
 pandas 
 pesq 
 pillow 
