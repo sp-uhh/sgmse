@@ -47,15 +47,15 @@ if __name__ == '__main__':
 
     # Enhance files
     for noisy_file in tqdm(noisy_files):
-        filename = noisy_file.split('/')[-1]
-        filename = noisy_file.replace(args.test_dir, "")[1:] # Remove the first character which is a slash
-        
+        filename = noisy_file.replace(args.test_dir, "")
+        filename = filename[1:] if filename.startswith("/") else filename
+
         # Load wav
         y, sr = load(noisy_file)
 
         # Resample if necessary
         if sr != target_sr:
-            y = resample(y, orig_sr=sr, target_sr=target_sr)
+            y = torch.tensor(resample(y.numpy(), orig_sr=sr, target_sr=target_sr))
 
         T_orig = y.size(1)   
 
