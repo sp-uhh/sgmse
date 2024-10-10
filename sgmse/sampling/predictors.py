@@ -43,10 +43,10 @@ class EulerMaruyamaPredictor(Predictor):
     def __init__(self, sde, score_fn, probability_flow=False):
         super().__init__(sde, score_fn, probability_flow=probability_flow)
 
-    def update_fn(self, x, t, *args):
+    def update_fn(self, x, y, t, *args):
         dt = -1. / self.rsde.N
         z = torch.randn_like(x)
-        f, g = self.rsde.sde(x, t, *args)
+        f, g = self.rsde.sde(x, y, t, *args)
         x_mean = x + f * dt
         x = x_mean + g[:, None, None, None] * np.sqrt(-dt) * z
         return x, x_mean
@@ -57,8 +57,8 @@ class ReverseDiffusionPredictor(Predictor):
     def __init__(self, sde, score_fn, probability_flow=False):
         super().__init__(sde, score_fn, probability_flow=probability_flow)
 
-    def update_fn(self, x, t, y, stepsize):
-        f, g = self.rsde.discretize(x, t, y, stepsize)
+    def update_fn(self, x, y, t, stepsize):
+        f, g = self.rsde.discretize(x, y, t, stepsize)
         z = torch.randn_like(x)
         x_mean = x - f
         x = x_mean + g[:, None, None, None] * z
@@ -72,5 +72,5 @@ class NonePredictor(Predictor):
     def __init__(self, *args, **kwargs):
         pass
 
-    def update_fn(self, x, t, *args):
+    def update_fn(self, x, y, t, *args):
         return x, x

@@ -19,7 +19,7 @@ class Corrector(abc.ABC):
         self.n_steps = n_steps
 
     @abc.abstractmethod
-    def update_fn(self, x, t, *args):
+    def update_fn(self, x, y, t, *args):
         """One update of the corrector.
 
         Args:
@@ -42,10 +42,10 @@ class LangevinCorrector(Corrector):
         self.n_steps = n_steps
         self.snr = snr
 
-    def update_fn(self, x, t, *args):
+    def update_fn(self, x, y, t, *args):
         target_snr = self.snr
         for _ in range(self.n_steps):
-            grad = self.score_fn(x, t, *args)
+            grad = self.score_fn(x, y, t, *args)
             noise = torch.randn_like(x)
             grad_norm = torch.norm(grad.reshape(grad.shape[0], -1), dim=-1).mean()
             noise_norm = torch.norm(noise.reshape(noise.shape[0], -1), dim=-1).mean()
@@ -61,20 +61,18 @@ class AnnealedLangevinDynamics(Corrector):
     """The original annealed Langevin dynamics predictor in NCSN/NCSNv2."""
     def __init__(self, sde, score_fn, snr, n_steps):
         super().__init__(sde, score_fn, snr, n_steps)
-        if not isinstance(sde, (sdes.OUVESDE,)):
-            raise NotImplementedError(f"SDE class {sde.__class__.__name__} not yet supported.")
         self.sde = sde
         self.score_fn = score_fn
         self.snr = snr
         self.n_steps = n_steps
 
-    def update_fn(self, x, t, *args):
+    def update_fn(self, x, y, t, *args):
         n_steps = self.n_steps
         target_snr = self.snr
-        std = self.sde.marginal_prob(x, t, *args)[1]
+        std = self.sde.marginal_prob(x, y, t, *args)[1]
 
         for _ in range(n_steps):
-            grad = self.score_fn(x, t, *args)
+            grad = self.score_fn(x, y, t, *args)
             noise = torch.randn_like(x)
             step_size = (target_snr * std) ** 2 * 2
             x_mean = x + step_size[:, None, None, None] * grad
