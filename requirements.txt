@@ -18,6 +18,7 @@ setuptools
 seaborn 
 torch 
 torch-ema 
+torch-pesq
 torchaudio
 torchvision 
 torchinfo 
