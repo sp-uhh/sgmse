@@ -1,3 +1,4 @@
+import torch
 import wandb
 import argparse
 import pytorch_lightning as pl
@@ -7,9 +8,10 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from os.path import join
 
-# Set CUDA architecture list
+# Set CUDA architecture list and float32 matmul precision high
 from sgmse.util.other import set_torch_cuda_arch_list
 set_torch_cuda_arch_list()
+torch.set_float32_matmul_precision('high')
 
 from sgmse.backbones.shared import BackboneRegistry
 from sgmse.data_module import SpecsDataModule
@@ -36,6 +38,7 @@ if __name__ == '__main__':
           parser_.add_argument("--wandb_name", type=str, default=None, help="Name for wandb logger. If not set, a random name is generated.")
           parser_.add_argument("--ckpt", type=str, default=None, help="Resume training from checkpoint.")
           parser_.add_argument("--log_dir", type=str, default="logs", help="Directory to save logs.")
+          parser_.add_argument("--save_ckpt_interval", type=int, default=50000, help="Save checkpoint interval.")
           
      temp_args, _ = base_parser.parse_known_args()
 
@@ -46,6 +49,7 @@ if __name__ == '__main__':
      trainer_parser.add_argument("--accelerator", type=str, default="gpu", help="Supports passing different accelerator types.")
      trainer_parser.add_argument("--devices", default="auto", help="How many gpus to use.")
      trainer_parser.add_argument("--accumulate_grad_batches", type=int, default=1, help="Accumulate gradients.")
+     trainer_parser.add_argument("--max_epochs", type=int, default=-1, help="Number of epochs to train.")
      
      ScoreModel.add_argparse_args(
           parser.add_argument_group("ScoreModel", description=ScoreModel.__name__))
@@ -76,17 +80,20 @@ if __name__ == '__main__':
      if args.nolog:
           logger = None
      else:
-          logger = WandbLogger(project="sgmse", log_model=True, save_dir="logs", name=args.wandb_name)
+          logger = WandbLogger(project="sgmse", log_model=False, save_dir="logs", name=args.wandb_name)
           logger.experiment.log_code(".")
 
      # Set up callbacks for logger
      if logger != None:
-          callbacks = [ModelCheckpoint(dirpath=join(args.log_dir, str(logger.version)), save_last=True, filename='{epoch}-last')]
+          callbacks = [ModelCheckpoint(dirpath=join(args.log_dir, str(logger.version)), save_last=True, 
+               filename='{epoch}-last')]
+          callbacks += [ModelCheckpoint(dirpath=join(args.log_dir, f'{str(logger.version)}-{args.wandb_name}'),
+               filename='{step}', save_top_k=-1, every_n_train_steps=args.save_ckpt_interval)]
           if args.num_eval_files:
                checkpoint_callback_pesq = ModelCheckpoint(dirpath=join(args.log_dir, str(logger.version)), 
-                    save_top_k=2, monitor="pesq", mode="max", filename='{epoch}-{pesq:.2f}')
+                    save_top_k=1, monitor="pesq", mode="max", filename='{epoch}-{pesq:.2f}')
                checkpoint_callback_si_sdr = ModelCheckpoint(dirpath=join(args.log_dir, str(logger.version)), 
-                    save_top_k=2, monitor="si_sdr", mode="max", filename='{epoch}-{si_sdr:.2f}')
+                    save_top_k=1, monitor="si_sdr", mode="max", filename='{epoch}-{si_sdr:.2f}')
                callbacks += [checkpoint_callback_pesq, checkpoint_callback_si_sdr]
      else:
           callbacks = None
