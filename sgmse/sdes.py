@@ -35,11 +35,11 @@ class SDE(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def sde(self, x, t, *args):
+    def sde(self, x, y, t, *args):
         pass
 
     @abc.abstractmethod
-    def marginal_prob(self, x, t, *args):
+    def marginal_prob(self, x, y, t, *args):
         """Parameters to determine the marginal distribution of the SDE, $p_t(x|args)$."""
         pass
 
@@ -69,7 +69,7 @@ class SDE(abc.ABC):
         """
         pass
 
-    def discretize(self, x, t, y, stepsize):
+    def discretize(self, x, y, t, stepsize):
         """Discretize the SDE in the form: x_{i+1} = x_i + f_i(x_i) + G_i z_i.
 
         Useful for reverse diffusion sampling and probabiliy flow sampling.
@@ -83,7 +83,7 @@ class SDE(abc.ABC):
             f, G
         """
         dt = stepsize
-        drift, diffusion = self.sde(x, t, y)
+        drift, diffusion = self.sde(x, y, t)
         f = drift * dt
         G = diffusion * torch.sqrt(dt)
         return f, G
@@ -110,15 +110,15 @@ class SDE(abc.ABC):
             def T(self):
                 return T
 
-            def sde(self, x, t, *args):
+            def sde(self, x, y, t, *args):
                 """Create the drift and diffusion functions for the reverse SDE/ODE."""
-                rsde_parts = self.rsde_parts(x, t, *args)
+                rsde_parts = self.rsde_parts(x, y, t, *args)
                 total_drift, diffusion = rsde_parts["total_drift"], rsde_parts["diffusion"]
                 return total_drift, diffusion
 
-            def rsde_parts(self, x, t, *args):
-                sde_drift, sde_diffusion = sde_fn(x, t, *args)
-                score = score_model(x, t, *args)
+            def rsde_parts(self, x, y, t, *args):
+                sde_drift, sde_diffusion = sde_fn(x, y, t, *args)
+                score = score_model(x, y, t, *args)
                 score_drift = -sde_diffusion[:, None, None, None]**2 * score * (0.5 if self.probability_flow else 1.)
                 diffusion = torch.zeros_like(sde_diffusion) if self.probability_flow else sde_diffusion
                 total_drift = sde_drift + score_drift
@@ -127,10 +127,10 @@ class SDE(abc.ABC):
                     'sde_diffusion': sde_diffusion, 'score_drift': score_drift, 'score': score,
                 }
 
-            def discretize(self, x, t, y, stepsize):
+            def discretize(self, x, y, t, stepsize):
                 """Create discretized iteration rules for the reverse diffusion sampler."""
-                f, G = discretize_fn(x, t, y, stepsize)
-                rev_f = f - G[:, None, None, None] ** 2 * score_model(x, t, y) * (0.5 if self.probability_flow else 1.)
+                f, G = discretize_fn(x, y, t, stepsize)
+                rev_f = f - G[:, None, None, None] ** 2 * score_model(x, y, t) * (0.5 if self.probability_flow else 1.)
                 rev_G = torch.zeros_like(G) if self.probability_flow else G
                 return rev_f, rev_G
 
@@ -145,13 +145,14 @@ class SDE(abc.ABC):
 class OUVESDE(SDE):
     @staticmethod
     def add_argparse_args(parser):
-        parser.add_argument("--sde-n", type=int, default=1000, help="The number of timesteps in the SDE discretization. 30 by default")
         parser.add_argument("--theta", type=float, default=1.5, help="The constant stiffness of the Ornstein-Uhlenbeck process. 1.5 by default.")
         parser.add_argument("--sigma-min", type=float, default=0.05, help="The minimum sigma to use. 0.05 by default.")
         parser.add_argument("--sigma-max", type=float, default=0.5, help="The maximum sigma to use. 0.5 by default.")
+        parser.add_argument("--N", type=int, default=30, help="The number of timesteps in the SDE discretization. 30 by default")
+        parser.add_argument("--sampler_type", type=str, default="pc", help="Type of sampler to use. 'pc' by default.")
         return parser
 
-    def __init__(self, theta, sigma_min, sigma_max, N=1000, **ignored_kwargs):
+    def __init__(self, theta, sigma_min, sigma_max, N=30, sampler_type="pc", **ignored_kwargs):
         """Construct an Ornstein-Uhlenbeck Variance Exploding SDE.
 
         Note that the "steady-state mean" `y` is not provided at construction, but must rather be given as an argument
@@ -175,15 +176,16 @@ class OUVESDE(SDE):
         self.sigma_max = sigma_max
         self.logsig = np.log(self.sigma_max / self.sigma_min)
         self.N = N
+        self.sampler_type = sampler_type
 
     def copy(self):
-        return OUVESDE(self.theta, self.sigma_min, self.sigma_max, N=self.N)
+        return OUVESDE(self.theta, self.sigma_min, self.sigma_max, N=self.N, sampler_type=self.sampler_type)
 
     @property
     def T(self):
         return 1
 
-    def sde(self, x, t, y):
+    def sde(self, x, y, t):
         drift = self.theta * (y - x)
         # the sqrt(2*logsig) factor is required here so that logsig does not in the end affect the perturbation kernel
         # standard deviation. this can be understood from solving the integral of [exp(2s) * g(s)^2] from s=0 to t
@@ -193,7 +195,7 @@ class OUVESDE(SDE):
         diffusion = sigma * np.sqrt(2 * self.logsig)
         return drift, diffusion
 
-    def _mean(self, x0, t, y):
+    def _mean(self, x0, y, t):
         theta = self.theta
         exp_interp = torch.exp(-theta * t)[:, None, None, None]
         return exp_interp * x0 + (1 - exp_interp) * y
@@ -216,8 +218,8 @@ class OUVESDE(SDE):
             (theta + logsig)
         )
 
-    def marginal_prob(self, x0, t, y):
-        return self._mean(x0, t, y), self._std(t)
+    def marginal_prob(self, x0, y, t):
+        return self._mean(x0, y, t), self._std(t)
 
     def prior_sampling(self, shape, y):
         if shape != y.shape:
@@ -230,81 +232,82 @@ class OUVESDE(SDE):
         raise NotImplementedError("prior_logp for OU SDE not yet implemented!")
 
 
-@SDERegistry.register("ouvp")
-class OUVPSDE(SDE):
-    # !!! We do not utilize this SDE in our works due to observed instabilities around t=0.2. !!!
+@SDERegistry.register("sbve")
+class SBVESDE(SDE):
     @staticmethod
     def add_argparse_args(parser):
-        parser.add_argument("--sde-n", type=int, default=1000,
-            help="The number of timesteps in the SDE discretization. 1000 by default")
-        parser.add_argument("--beta-min", type=float, required=True,
-            help="The minimum beta to use.")
-        parser.add_argument("--beta-max", type=float, required=True,
-            help="The maximum beta to use.")
-        parser.add_argument("--stiffness", type=float, default=1,
-            help="The stiffness factor for the drift, to be multiplied by 0.5*beta(t). 1 by default.")
+        parser.add_argument("--N", type=int, default=50, help="The number of timesteps in the SDE discretization. 50 by default")
+        parser.add_argument("--k", type=float, default=2.6, help="Parameter of the diffusion coefficient. 2.6 by default.")
+        parser.add_argument("--c", type=float, default=0.4, help="Parameter of the diffusion coefficient. 0.4 by default.")
+        parser.add_argument("--eps", type=float, default=1e-8, help="Small constant to avoid numerical instability. 1e-8 by default.")
+        parser.add_argument("--sampler_type", type=str, default="ode")
         return parser
 
-    def __init__(self, beta_min, beta_max, stiffness=1, N=1000, **ignored_kwargs):
-        """
-        !!! We do not utilize this SDE in our works due to observed instabilities around t=0.2. !!!
+    def __init__(self, k, c, N=50, eps=1e-8, sampler_type="ode", **ignored_kwargs):
+        """Construct a Schrodinger Bridge with Variance Exploding SDE.
 
-        Construct an Ornstein-Uhlenbeck Variance Preserving SDE:
-
-        dx = -1/2 * beta(t) * stiffness * (y-x) dt + sqrt(beta(t)) * dw
-
-        with
-
-        beta(t) = beta_min + t(beta_max - beta_min)
-
-        Note that the "steady-state mean" `y` is not provided at construction, but must rather be given as an argument
-        to the methods which require it (e.g., `sde` or `marginal_prob`).
+        As described in Jukić et al., „Schrödinger Bridge for Generative Speech Enhancement“, 2024.
 
         Args:
-            beta_min: smallest sigma.
-            beta_max: largest sigma.
-            stiffness: stiffness factor of the drift. 1 by default.
+            k: stiffness parameter.
+            c: diffusion parameter.
             N: number of discretization steps
         """
         super().__init__(N)
-        self.beta_min = beta_min
-        self.beta_max = beta_max
-        self.stiffness = stiffness
+        self.k = k
+        self.c = c
         self.N = N
+        self.eps = eps
+        self.sampler_type = sampler_type
 
     def copy(self):
-        return OUVPSDE(self.beta_min, self.beta_max, self.stiffness, N=self.N)
+        return SBVESDE(self.k, self.c, N=self.N)
 
     @property
     def T(self):
         return 1
 
-    def _beta(self, t):
-        return self.beta_min + t * (self.beta_max - self.beta_min)
+    def sde(self, x, y, t):
+        f = 0.0                                                                 # Table 1
+        g = torch.sqrt(torch.tensor(self.c)) * self.k**(t)                      # Table 1
+        return f, g
 
-    def sde(self, x, t, y):
-        drift = 0.5 * self.stiffness * batch_broadcast(self._beta(t), y) * (y - x)
-        diffusion = torch.sqrt(self._beta(t))
-        return drift, diffusion
+    def _sigmas_alphas(self, t):
+        alpha_t = torch.ones_like(t)
+        alpha_T = torch.ones_like(t)
+        sigma_t = torch.sqrt((self.c*(self.k**(2*t)-1.0)) \
+            / (2*torch.log(torch.tensor(self.k))))                              # Table 1
+        sigma_T = torch.sqrt((self.c*(self.k**(2*self.T)-1.0)) \
+            / (2*torch.log(torch.tensor(self.k))))                              # Table 1   
+        
+        alpha_bart = alpha_t / (alpha_T + self.eps)                             # below Eq. (9)
+        sigma_bart = torch.sqrt(sigma_T**2 - sigma_t**2 + self.eps)             # below Eq. (9)
 
-    def _mean(self, x0, t, y):
-        b0, b1, s = self.beta_min, self.beta_max, self.stiffness
-        x0y_fac = torch.exp(-0.25 * s * t * (t * (b1-b0) + 2 * b0))[:, None, None, None]
-        return y + x0y_fac * (x0 - y)
+        return sigma_t, sigma_T, sigma_bart, alpha_t, alpha_T, alpha_bart
+
+    def _mean(self, x0, y, t):
+        sigma_t, sigma_T, sigma_bart, alpha_t, alpha_T, alpha_bart = self._sigmas_alphas(t)
+
+        w_xt = alpha_t * sigma_bart**2 / (sigma_T**2 + self.eps)                # below Eq. (11)
+        w_yt = alpha_bart * sigma_t**2 / (sigma_T**2 + self.eps)                # below Eq. (11)
+
+        mu = w_xt[:, None, None, None] * x0 + w_yt[:, None, None, None] * y     # Eq. (11)
+        return mu
 
     def _std(self, t):
-        b0, b1, s = self.beta_min, self.beta_max, self.stiffness
-        return (1 - torch.exp(-0.5 * s * t * (t * (b1-b0) + 2 * b0))) / s
+        sigma_t, sigma_T, sigma_bart, alpha_t, alpha_T, alpha_bart = self._sigmas_alphas(t)
 
-    def marginal_prob(self, x0, t, y):
-        return self._mean(x0, t, y), self._std(t)
+        sigma_xt = (alpha_t * sigma_bart * sigma_t) / (sigma_T + self.eps) 
+        return sigma_xt
+
+    def marginal_prob(self, x0, y, t):  
+        return self._mean(x0, y, t), self._std(t)
 
     def prior_sampling(self, shape, y):
         if shape != y.shape:
             warnings.warn(f"Target shape {shape} does not match shape of y {y.shape}! Ignoring target shape.")
-        std = self._std(torch.ones((y.shape[0],), device=y.device))
-        x_T = y + torch.randn_like(y) * std[:, None, None, None]
+        x_T = y
         return x_T
 
     def prior_logp(self, z):
-        raise NotImplementedError("prior_logp for OU SDE not yet implemented!")
+        raise NotImplementedError("prior_logp for SBVE SDE not yet implemented!")  
