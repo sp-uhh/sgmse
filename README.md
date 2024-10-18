@@ -121,6 +121,7 @@ We kindly ask you to cite our papers in your publication when using any of our r
   title={{EARS}: An Anechoic Fullband Speech Dataset Benchmarked for Speech Enhancement and Dereverberation},
   author={Richter, Julius and Wu, Yi-Chiao and Krenn, Steven and Welker, Simon and Lay, Bunlong and Watanabe, Shinjii and Richard, Alexander and Gerkmann, Timo},
   booktitle={ISCA Interspeech},
+  pages={4873--4877},
   year={2024}
 }
 ```
