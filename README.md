@@ -7,7 +7,7 @@ This repository contains the official PyTorch implementations for the papers:
 - Simon Welker, Julius Richter, Timo Gerkmann, [*"Speech Enhancement with Score-Based Generative Models in the Complex STFT Domain"*](https://www.isca-speech.org/archive/interspeech_2022/welker22_interspeech.html), ISCA Interspeech, Incheon, Korea, Sept. 2022. [[bibtex]](#citations--references)
 - Julius Richter, Simon Welker, Jean-Marie Lemercier, Bunlong Lay, Timo Gerkmann, [*"Speech Enhancement and Dereverberation with Diffusion-Based Generative Models"*](https://ieeexplore.ieee.org/abstract/document/10149431), IEEE/ACM Transactions on Audio, Speech, and Language Processing, vol. 31, pp. 2351-2364, 2023. [[bibtex]](#citations--references)
 - Julius Richter, Yi-Chiao Wu, Steven Krenn, Simon Welker, Bunlong Lay, Shinji Watanabe, Alexander Richard, Timo Gerkmann, [*"EARS: An Anechoic Fullband Speech Dataset Benchmarked for Speech Enhancement and Dereverberation"*](https://arxiv.org/abs/2406.06185), ISCA Interspecch, Kos, Greece, Sept. 2024. [[bibtex]](#citations--references)
-- Julius Richter, Danilo de Oliveira, Timo Gerkmann, [*"Investigating Training Objectives for Generative Speech Enhancement"*](https://arxiv.org/abs/2409.10753) (preprint), 2024. [[bibtex]](#citations--references) 
+- Julius Richter, Danilo de Oliveira, Timo Gerkmann, [*"Investigating Training Objectives for Generative Speech Enhancement"*](https://arxiv.org/abs/2409.10753), accepted at IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP), 2025. [[bibtex]](#citations--references) 
 
 Audio examples and supplementary materials are available on our [SGMSE project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse), [EARS project page](https://sp-uhh.github.io/ears_dataset/), and [Investigating training objectives project page](https://sp-uhh.github.io/gen-se/).
 
@@ -126,11 +126,11 @@ We kindly ask you to cite our papers in your publication when using any of our r
 }
 ```
 ```bib
-@article{richter2024investigating,
+@inproceedings{richter2025investigating,
   title={Investigating Training Objectives for Generative Speech Enhancement},
   author={Richter, Julius and de Oliveira, Danilo and Gerkmann, Timo},
-  journal={arXiv preprint arXiv:2409.10753},
-  year={2024}
+  booktitle={IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP)},
+  year={2025}
 }
 ```
 
@@ -140,4 +140,4 @@ We kindly ask you to cite our papers in your publication when using any of our r
 >
 >[3] Julius Richter, Yi-Chiao Wu, Steven Krenn, Simon Welker, Bunlong Lay, Shinji Watanabe, Alexander Richard, Timo Gerkmann. "EARS: An Anechoic Fullband Speech Dataset Benchmarked for Speech Enhancement and Dereverberation", ISCA Interspeech, Kos, Greece, 2024.
 >
->[4] Julius Richter, Danilo de Oliveira, Timo Gerkmann. "Investigating Training Objectives for Generative Speech Enhancement", arXiv preprint arXiv:2409.10753, 2024.
+>[4] Julius Richter, Danilo de Oliveira, Timo Gerkmann. "Investigating Training Objectives for Generative Speech Enhancement", accepted at IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP), 2025.
