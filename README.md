@@ -11,6 +11,8 @@ This repository contains the official PyTorch implementations for the papers:
 
 Audio examples and supplementary materials are available on our [SGMSE project page](https://www.inf.uni-hamburg.de/en/inst/ab/sp/publications/sgmse), [EARS project page](https://sp-uhh.github.io/ears_dataset/), and [Investigating training objectives project page](https://sp-uhh.github.io/gen-se/).
 
+An interactive demo of generative speech enhancement using a juypter notebook can be found [here](https://github.com/sp-uhh/gen-se-demo/).
+
 ## Follow-up work
 
 Please also check out our follow-up work with code available: 
