@@ -52,6 +52,7 @@ Please also check out our follow-up work with code available:
     - M6: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m6.ckpt`
     - M7: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m7.ckpt`
     - M8: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m8.ckpt`
+- We offer a pretrained checkpoint for the Schrödinger bridge model trained on EARS-WHAM + VB-DMD dataset. You can download it [here](https://www2.informatik.uni-hamburg.de/sp/audio/publications/icml2025-avdiffuser/checkpoints/SB_VB-DMD_EARS-WHAM_900k.pt).
 
 Usage:
 - For resuming training, you can use the `--ckpt` option of `train.py`.
