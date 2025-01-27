@@ -121,6 +121,16 @@ We kindly ask you to cite our papers in your publication when using any of our r
 }
 ```
 ```bib
+@inproceedings{lemercier2023analysing,
+  author={Lemercier, Jean-Marie and Richter, Julius and Welker, Simon and Gerkmann, Timo},
+  booktitle={IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)}, 
+  title={Analysing Diffusion-based Generative Approaches Versus Discriminative Approaches for Speech Restoration}, 
+  year={2023},
+  pages={1-5},
+  doi={10.1109/ICASSP49357.2023.10095258}
+}
+```
+```bib
 @inproceedings{richter2024ears,
   title={{EARS}: An Anechoic Fullband Speech Dataset Benchmarked for Speech Enhancement and Dereverberation},
   author={Richter, Julius and Wu, Yi-Chiao and Krenn, Steven and Welker, Simon and Lay, Bunlong and Watanabe, Shinjii and Richard, Alexander and Gerkmann, Timo},
