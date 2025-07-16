@@ -55,4 +55,10 @@ where = ["."]
 include = ["sgmse", "sgmse.*"]
 
 [tool.setuptools.package-data]
-sgmse = ["*.png", "*.md"]
+"sgmse" = [
+  "backbones/ncsnpp_utils/op/*.cpp",
+  "backbones/ncsnpp_utils/op/*.cu",
+  "backbones/ncsnpp_utils/op/*.cuh",
+  "*.png",
+  "*.md"
+]
