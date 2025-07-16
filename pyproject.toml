@@ -7,7 +7,7 @@ name = "sgmse"
 version = "0.1.0"
 description = "Score-based Generative Models for Speech Enhancement and Dereverberation"
 readme = "README.md"
-requires-python = "==3.11"
+requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [
   { name = "Simon Welker" },
@@ -44,10 +44,15 @@ dependencies = [
   "wandb"
 ]
 
+[project.urls]
+Homepage = "https://github.com/jrochdi/sgmse"
+
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["sgmse", "sgmse.*"]
 
 [tool.setuptools.package-data]
-"sgmse" = ["*.png", "*.md"]
-include-package-data = true
+sgmse = ["*.png", "*.md"]
