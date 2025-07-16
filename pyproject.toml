@@ -45,7 +45,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jrochdi/sgmse"
+Homepage = "https://github.com/sp-uhh/sgmse"
 
 [tool.setuptools]
 include-package-data = true
