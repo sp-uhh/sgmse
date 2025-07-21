@@ -58,15 +58,15 @@ Please also check out our follow-up work with code available:
     - SGMSE+ (artificial RIR): `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/itg2025-reverbfx/checkpoints/sgmse_artificial_rir_350k.ckpt`
     - SGMSE+ (natural RIR): `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/itg2025-reverbfx/checkpoints/sgmse_natural_rir_350k.ckpt`
     - SB (artificial RIR): `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/itg2025-reverbfx/checkpoints/sb_artificial_rir_350k.ckpt`
-  Please cite the [ReverFX dataset](https://sp-uhh.github.io/reverbfx/) paper, when you make use of the data or the checkpoints:
-  ```bib
-  @inproceedings{richter2025reverbfx,
-    author={Julius Richter and Till Svajda and Timo Gerkmann},
-    title={{ReverbFX}: A Dataset of Room Impulse Responses Derived from Reverb Effect Plugins for Singing Voice Dereverberation},
-    year={2025},
-    booktitle={ITG Conference on Speech Communication},
-  }
-  ```
+    - Please cite the [ReverFX dataset](https://sp-uhh.github.io/reverbfx/) paper, when you make use of the data or the checkpoints:
+      ```bib
+      @inproceedings{richter2025reverbfx,
+        author={Julius Richter and Till Svajda and Timo Gerkmann},
+        title={{ReverbFX}: A Dataset of Room Impulse Responses Derived from Reverb Effect Plugins for Singing Voice Dereverberation},
+        year={2025},
+        booktitle={ITG Conference on Speech Communication},
+      }
+      ```
 
 Usage:
 - For resuming training, you can use the `--ckpt` option of `train.py`.
