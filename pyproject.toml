@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sgmse"
+version = "0.1.0"
+description = "Score-based Generative Models for Speech Enhancement and Dereverberation"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Simon Welker" },
+  { name = "Julius Richter" },
+  { name = "Timo Gerkmann" }
+]
+dependencies = [
+  "gdown",
+  "h5py",
+  "ipympl",
+  "librosa",
+  "ninja",
+  "numpy<2.0",
+  "pandas",
+  "pesq",
+  "Pillow",
+  "protobuf",
+  "pyarrow",
+  "pyroomacoustics",
+  "pystoi",
+  "pytorch-lightning",
+  "scipy",
+  "sdeint",
+  "setuptools",
+  "seaborn",
+  "torch",
+  "torch-ema",
+  "torch-pesq",
+  "torchaudio",
+  "torchvision",
+  "torchinfo",
+  "torchsde",
+  "tqdm",
+  "wandb"
+]
+
+[project.urls]
+Homepage = "https://github.com/sp-uhh/sgmse"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sgmse", "sgmse.*"]
+
+[tool.setuptools.package-data]
+"sgmse" = [
+  "backbones/ncsnpp_utils/op/*.cpp",
+  "backbones/ncsnpp_utils/op/*.cu",
+  "backbones/ncsnpp_utils/op/*.cuh",
+  "*.png",
+  "*.md"
+]
