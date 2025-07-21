@@ -44,7 +44,7 @@ Please also check out our follow-up work with code available:
 - For 48 kHz models [3], we offer pretrained checkpoints for speech enhancement, trained on the EARS-WHAM dataset, and for dereverberation, trained on the EARS-Reverb dataset. You can download them [here](https://drive.google.com/drive/folders/1Tn6pVwjxUAy1DJ8167JCg3enuSi0hiw5?usp=sharing).
     - SGMSE+ trained on EARS-WHAM: `gdown 1t_DLLk8iPH6nj8M5wGeOP3jFPaz3i7K5`
     - SGMSE+ trained on EARS-Reverb: `gdown 1PunXuLbuyGkknQCn_y-RCV2dTZBhyE3V`
-- For the investigating training objectives checkpoints [4], we offer the pretrained checkpoints [here](https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/)
+- For the investigating training objectives checkpoints [4], we offer the pretrained checkpoints [here](https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/).
     - M1: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m1.ckpt`
     - M2: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m2.ckpt`
     - M3: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m3.ckpt`
@@ -54,6 +54,19 @@ Please also check out our follow-up work with code available:
     - M7: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m7.ckpt`
     - M8: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m8.ckpt`
 - We offer a pretrained checkpoint for the Schrödinger bridge model trained on EARS-WHAM + VB-DMD dataset. You can download it [here](https://www2.informatik.uni-hamburg.de/sp/audio/publications/lipdiffuser/checkpoints/SB_VB-DMD_EARS-WHAM_900k.pt).
+- We provide pretrained checkpoints for SGMSE+ and the SB trained on Singing-ReverbFX [here](https://www2.informatik.uni-hamburg.de/sp/audio/publications/itg2025-reverbfx/checkpoints/).
+    - SGMSE+ (artificial RIR): `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/itg2025-reverbfx/checkpoints/sgmse_artificial_rir_350k.ckpt`
+    - SGMSE+ (natural RIR): `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/itg2025-reverbfx/checkpoints/sgmse_natural_rir_350k.ckpt`
+    - SB (artificial RIR): `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/itg2025-reverbfx/checkpoints/sb_artificial_rir_350k.ckpt`
+  Please cite the [ReverFX dataset](https://sp-uhh.github.io/reverbfx/) paper, when you make use of the data or the checkpoints:
+  ```bib
+  @inproceedings{richter2025reverbfx,
+    author={Julius Richter and Till Svajda and Timo Gerkmann},
+    title={{ReverbFX}: A Dataset of Room Impulse Responses Derived from Reverb Effect Plugins for Singing Voice Dereverberation},
+    year={2025},
+    booktitle={ITG Conference on Speech Communication},
+  }
+  ```
 
 Usage:
 - For resuming training, you can use the `--ckpt` option of `train.py`.
