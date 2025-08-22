@@ -53,7 +53,7 @@ Please also check out our follow-up work with code available:
     - M6: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m6.ckpt`
     - M7: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m7.ckpt`
     - M8: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m8.ckpt`
-- We offer a pretrained checkpoint for the Schrödinger bridge model trained on EARS-WHAM + VB-DMD dataset. You can download it [here](https://www2.informatik.uni-hamburg.de/sp/audio/publications/lipdiffuser/checkpoints/SB_VB-DMD_EARS-WHAM_900k.pt).
+- We offer a pretrained checkpoint for the Schrödinger bridge model trained on EARS-WHAM + VB-DMD dataset. You can download it [here](https://www2.informatik.uni-hamburg.de/sp/audio/publications/lipdiffuser/checkpoints/SB_VB-DMD_EARS-WHAM_900k.pt). The model is trained with: batch_size=16, devices=2, backbone="ncsnpp_v2", loss_type="data_prediction", sde="sbve", sr=16000. 
 - We provide pretrained checkpoints for SGMSE+ and the SB trained on Singing-ReverbFX [here](https://www2.informatik.uni-hamburg.de/sp/audio/publications/itg2025-reverbfx/checkpoints/).
     - SGMSE+ (artificial RIR): `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/itg2025-reverbfx/checkpoints/sgmse_artificial_rir_350k.ckpt`
     - SGMSE+ (natural RIR): `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/itg2025-reverbfx/checkpoints/sgmse_natural_rir_350k.ckpt`
