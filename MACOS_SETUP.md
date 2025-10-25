@@ -116,7 +116,7 @@ cp /path/to/your/noisy_audio.wav data/test/
 
 ### Chỉnh sửa code để dùng MPS
 
-Tạo file `run_experiment_mps.py`:
+Tạo file `run_experiment.py`:
 
 ```python
 #!/usr/bin/env python3
@@ -171,10 +171,10 @@ if __name__ == '__main__':
 
 Chạy:
 ```bash
-chmod +x run_experiment_mps.py
-python3 run_experiment_mps.py \
+chmod +x run_experiment.py
+python3 run_experiment.py \
     --checkpoint ./checkpoints/enhanced.ckpt \
-    --noisy_dir ./data/test \
+    --noisy_dir ./data/official_samples \
     --output_dir ./results
 ```
 
