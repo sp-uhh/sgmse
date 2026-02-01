@@ -48,7 +48,7 @@ Please also check out our follow-up work with code available:
     - M1: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m1.ckpt`
     - M2: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m2.ckpt`
     - M3: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m3.ckpt`
-    - M4: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m4.ckpt`
+    - M4: Please check our [repo for EDM2SE](https://github.com/sp-uhh/edm2se)
     - M5: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m5.ckpt`
     - M6: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m6.ckpt`
     - M7: `wget https://www2.informatik.uni-hamburg.de/sp/audio/publications/icassp2025_gense/checkpoints/m7.ckpt`
