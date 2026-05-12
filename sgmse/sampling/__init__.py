@@ -98,7 +98,7 @@ def get_ode_sampler(
 
     def denoise_update_fn(x):
         vec_eps = torch.ones(x.shape[0], device=x.device) * eps
-        _, x = predictor.update_fn(x, y, vec_eps)
+        _, x = predictor.update_fn(x, y, vec_eps, vec_eps)
         return x
 
     def drift_fn(x, y, t):
